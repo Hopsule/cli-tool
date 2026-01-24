@@ -1,19 +1,17 @@
 # Hopsule CLI
 
-> Decision-first workflow management CLI with interactive terminal UI
+> Decision & Memory Layer for AI teams & coding tools
 
 [![Release](https://img.shields.io/github/v/release/Hopsule/cli-tool)](https://github.com/Hopsule/cli-tool/releases)
 [![License](https://img.shields.io/github/license/Hopsule/cli-tool)](LICENSE)
 
 ## ✨ Features
 
-- 🎨 **Interactive TUI** - Daytona-style terminal interface
-- ⚡ **Arrow Key Navigation** - Navigate commands with ↑/↓
-- ⌨️ **Keyboard Shortcuts** - Full keyboard control (Enter, q, ?)
-- 📊 **Real-time Status** - Live connection and sync status
-- 🎯 **Command Execution** - Execute commands directly from TUI
-- 🔧 **Configuration** - Easy setup with `hopsule config`
-- 🌈 **Colored Output** - Beautiful terminal styling
+- 🎨 **Minimal Dashboard** - Clean, focused interface
+- ⌨️ **Keyboard Navigation** - Arrow keys for command selection
+- 🖤 **Monochrome Theme** - Works in dark and light terminals
+- 🚀 **Essential Commands** - init, login, connect, dev
+- 📦 **Easy Install** - Homebrew or direct download
 
 ## 🚀 Quick Start
 
@@ -35,44 +33,45 @@ chmod +x /usr/local/bin/hopsule
 
 ### Usage
 
-#### Interactive Mode
 ```bash
-# Launch interactive dashboard
+# Launch dashboard
 hopsule
 ```
 
+**Output:**
+```
+        ████      ████                       Hopsule
+        ████      ████                       Decision & Memory Layer
+            ████████                         for AI teams & coding tools
+            ████████
+        ████          ████                   v0.4.2
+        ████          ████                   ─────────────────────────────
+                                             Get started
+                                             > hopsule init     (create config)
+                                               hopsule login    (authenticate)
+                                               hopsule connect  (link repo)
+                                               hopsule dev      (interactive TUI)
+
+                                             view all commands
+```
+
 **Keyboard Shortcuts:**
-- `↑/↓` or `k/j` - Navigate commands
+- `↑/↓` - Navigate commands
 - `Enter` - Execute selected command
 - `q` - Quit
-- `?` - Toggle help
+- `?` - Help
 
-#### Direct Commands
-```bash
-# Configure CLI
-hopsule config
+## 🎯 Commands
 
-# List all decisions
-hopsule list
-
-# Create new decision
-hopsule create
-
-# Get decision details
-hopsule get <decision-id>
-
-# Accept decision
-hopsule accept <decision-id>
-
-# Deprecate decision
-hopsule deprecate <decision-id>
-
-# Show project status
-hopsule status
-
-# Sync with decision-api
-hopsule sync
-```
+| Command | Description |
+|---------|-------------|
+| `hopsule` | Launch interactive dashboard |
+| `hopsule init` | Create configuration |
+| `hopsule login` | Authenticate with decision-api |
+| `hopsule connect` | Link repository |
+| `hopsule dev` | Start interactive development mode |
+| `hopsule --help` | Show help |
+| `hopsule --version` | Show version |
 
 ## 📋 Requirements
 
@@ -84,7 +83,7 @@ hopsule sync
 
 ### Interactive Setup
 ```bash
-hopsule config
+hopsule init
 ```
 
 ### Manual Configuration
@@ -105,21 +104,19 @@ export DECISION_PROJECT=your-project-id
 export DECISION_TOKEN=your-jwt-token
 ```
 
-## 🎯 Commands
+## 🎨 Design Philosophy
 
-| Command | Description |
-|---------|-------------|
-| `hopsule` | Launch interactive dashboard |
-| `hopsule config` | Configure CLI settings |
-| `hopsule list` | List all decisions |
-| `hopsule get <id>` | Get decision details |
-| `hopsule create` | Create new decision |
-| `hopsule accept <id>` | Accept a decision |
-| `hopsule deprecate <id>` | Deprecate a decision |
-| `hopsule status` | Show project status |
-| `hopsule sync` | Sync with decision-api |
-| `hopsule --help` | Show help |
-| `hopsule --version` | Show version |
+**Minimal & Focused**
+- Show only what matters
+- No visual clutter
+- Guide users to key actions
+- Professional and elegant
+
+**Universal Compatibility**
+- Monochrome theme (black/white/gray)
+- Works in dark and light terminals
+- Adaptive colors via lipgloss
+- Clean ASCII logo
 
 ## 🏗️ Architecture
 
@@ -164,18 +161,14 @@ go build -o decision ./cmd/decision
 go test ./...
 ```
 
-### Install Locally
-```bash
-go install ./cmd/decision
-```
+## 📦 Release History
 
-## 📦 Release Process
-
-1. Update version
-2. Create git tag
-3. Build binaries
-4. Create GitHub release
-5. Update Homebrew formula
+- **v0.4.0** - Minimal dashboard design
+- **v0.3.0** - Monochrome theme + ASCII logo
+- **v0.2.1** - Panic fix (lipgloss.Width)
+- **v0.2.0** - Interactive TUI with bubbletea
+- **v0.1.1** - Dashboard UI
+- **v0.1.0** - Initial release
 
 ## 🤝 Contributing
 
@@ -189,8 +182,8 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 - [Decision API](https://github.com/Hopsule/api)
 - [Web App](https://github.com/Hopsule/web-app)
-- [Documentation](https://github.com/Hopsule/cli-tool/wiki)
 - [Releases](https://github.com/Hopsule/cli-tool/releases)
+- [Organization](https://github.com/Hopsule)
 
 ## 📞 Support
 
