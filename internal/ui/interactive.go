@@ -126,6 +126,9 @@ func (m model) View() string {
 
 	var s strings.Builder
 
+	// Top border
+	s.WriteString("  " + versionStyle.Render("──────────────────────────────────────────────────────────────────") + "\n\n")
+
 	// Logo and info side by side
 	logo := m.logoView()
 	info := m.infoView()
@@ -134,6 +137,9 @@ func (m model) View() string {
 	s.WriteString(m.sideBySide(logo, info))
 
 	s.WriteString("\n")
+
+	// Bottom border
+	s.WriteString("  " + versionStyle.Render("──────────────────────────────────────────────────────────────────") + "\n")
 
 	return s.String()
 }
@@ -161,11 +167,14 @@ func (m model) logoView() string {
 func (m model) infoView() string {
 	var s strings.Builder
 
+	// Add empty line for vertical alignment with logo
+	s.WriteString("\n")
+
 	s.WriteString("  " + titleStyle.Render("Hopsule") + "\n")
 	s.WriteString("  " + infoStyle.Render("Decision & Memory Layer") + "\n")
 	s.WriteString("  " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
 
-	s.WriteString("  " + versionStyle.Render("v0.7.4") + "\n")
+	s.WriteString("  " + versionStyle.Render("v0.7.5") + "\n")
 	s.WriteString("  " + versionStyle.Render("─────────────────────────────") + "\n")
 	s.WriteString("  " + titleStyle.Render("Get started") + "\n")
 
