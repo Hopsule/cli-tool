@@ -1,0 +1,56 @@
+project_name: hopsule
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: decision
+    binary: decision
+    main: ./cmd/decision
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: decision
+    builds:
+      - decision
+    format: tar.gz
+    name_template: "decision-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+brews:
+  - name: hopsule
+    repository:
+      owner: Hopsule
+      name: homebrew-tap
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: https://github.com/Hopsule/cli-tool
+    description: "Decision-first workflow management CLI"
+    license: MIT
+    install: |
+      bin.install "decision" => "hopsule"
+    test: |
+      system "#{bin}/hopsule", "--version"
+
+release:
+  github:
+    owner: Hopsule
+    name: cli-tool
+  draft: false
+  prerelease: false
+  name_template: "v{{.Version}}"

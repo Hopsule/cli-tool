@@ -43,7 +43,7 @@ func (c *Client) WithBaseURL(url string) *Client {
 	}
 }
 
-func (c *Client) doRequest(method, path string, body interface{}) (*http.Response, error) {
+func (c *Client) doRequest(method, path string, body interface{}, projectID string) (*http.Response, error) {
 	url := fmt.Sprintf("%s%s", c.baseURL, path)
 
 	var reqBody io.Reader
@@ -64,6 +64,9 @@ func (c *Client) doRequest(method, path string, body interface{}) (*http.Respons
 	if c.token != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 	}
+	if projectID != "" {
+		req.Header.Set("X-Project-ID", projectID)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -75,7 +78,7 @@ func (c *Client) doRequest(method, path string, body interface{}) (*http.Respons
 
 // ListDecisions lists all decisions for a project
 func (c *Client) ListDecisions(projectID string) ([]Decision, error) {
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v1/projects/%s/decisions", projectID), nil)
+	resp, err := c.doRequest("GET", "/decisions", nil, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +99,7 @@ func (c *Client) ListDecisions(projectID string) ([]Decision, error) {
 
 // GetDecision retrieves a specific decision
 func (c *Client) GetDecision(projectID, decisionID string) (*Decision, error) {
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v1/projects/%s/decisions/%s", projectID, decisionID), nil)
+	resp, err := c.doRequest("GET", fmt.Sprintf("/decisions/%s", decisionID), nil, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +118,9 @@ func (c *Client) GetDecision(projectID, decisionID string) (*Decision, error) {
 	return &decision, nil
 }
 
-// CreateDecision creates a new decision
+// CreateDecision creates a new decision draft
 func (c *Client) CreateDecision(projectID string, req CreateDecisionRequest) (*Decision, error) {
-	resp, err := c.doRequest("POST", fmt.Sprintf("/api/v1/projects/%s/decisions", projectID), req)
+	resp, err := c.doRequest("POST", "/decisions/draft", req, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +141,10 @@ func (c *Client) CreateDecision(projectID string, req CreateDecisionRequest) (*D
 
 // AcceptDecision accepts a decision (moves from DRAFT/PENDING to ACCEPTED)
 func (c *Client) AcceptDecision(projectID, decisionID string) (*Decision, error) {
-	resp, err := c.doRequest("POST", fmt.Sprintf("/api/v1/projects/%s/decisions/%s/accept", projectID, decisionID), nil)
+	req := AcceptDecisionRequest{
+		ID: decisionID,
+	}
+	resp, err := c.doRequest("POST", "/decisions/accept", req, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +165,10 @@ func (c *Client) AcceptDecision(projectID, decisionID string) (*Decision, error)
 
 // DeprecateDecision deprecates a decision (moves to DEPRECATED)
 func (c *Client) DeprecateDecision(projectID, decisionID string) (*Decision, error) {
-	resp, err := c.doRequest("POST", fmt.Sprintf("/api/v1/projects/%s/decisions/%s/deprecate", projectID, decisionID), nil)
+	req := DeprecateDecisionRequest{
+		ID: decisionID,
+	}
+	resp, err := c.doRequest("POST", "/decisions/deprecate", req, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +189,7 @@ func (c *Client) DeprecateDecision(projectID, decisionID string) (*Decision, err
 
 // GetProjectStatus retrieves project status
 func (c *Client) GetProjectStatus(projectID string) (*ProjectStatus, error) {
-	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v1/projects/%s/status", projectID), nil)
+	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v1/projects/%s/status", projectID), nil, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -217,6 +226,16 @@ type CreateDecisionRequest struct {
 	Rationale string   `json:"rationale"`
 	ScopeKey  *string  `json:"scope_key,omitempty"`
 	Tags      []string `json:"tags,omitempty"`
+}
+
+type AcceptDecisionRequest struct {
+	ID             string `json:"id"`
+	AcceptedBy     string `json:"accepted_by,omitempty"`
+	AcceptanceNote string `json:"acceptance_note,omitempty"`
+}
+
+type DeprecateDecisionRequest struct {
+	ID string `json:"id"`
 }
 
 type ProjectStatus struct {
