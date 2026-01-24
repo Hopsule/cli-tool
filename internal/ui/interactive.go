@@ -25,33 +25,35 @@ type model struct {
 }
 
 var (
+	// Adaptive colors for dark/light terminal support
 	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86")).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "255"}).
 			Bold(true)
 
 	selectedStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("170")).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "255"}).
 			Bold(true).
 			PaddingLeft(2)
 
 	normalStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240")).
+			Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "250"}).
 			PaddingLeft(4)
 
 	logoStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86"))
+			Foreground(lipgloss.AdaptiveColor{Light: "238", Dark: "252"})
 
 	infoStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
+			Foreground(lipgloss.AdaptiveColor{Light: "244", Dark: "244"})
 
 	accentStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86"))
+			Foreground(lipgloss.AdaptiveColor{Light: "238", Dark: "252"})
 
 	versionStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
+			Foreground(lipgloss.AdaptiveColor{Light: "248", Dark: "240"})
 
 	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86")).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "255"}).
+			BorderForeground(lipgloss.AdaptiveColor{Light: "240", Dark: "248"}).
 			Border(lipgloss.RoundedBorder()).
 			Padding(1, 2)
 )
@@ -125,8 +127,11 @@ func (m model) View() string {
 
 	var s strings.Builder
 
-	// Top border
-	s.WriteString(accentStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n\n")
+	// Top border - using a dedicated border style
+	borderStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "248"})
+	
+	s.WriteString(borderStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n\n")
 
 	// Logo and info side by side
 	logo := m.logoView()
@@ -136,7 +141,7 @@ func (m model) View() string {
 	s.WriteString(m.sideBySide(logo, info))
 
 	s.WriteString("\n")
-	s.WriteString(accentStyle.Render("        ─────────────────────────────────────────────────────────────────────────────") + "\n\n")
+	s.WriteString(borderStyle.Render("        ─────────────────────────────────────────────────────────────────────────────") + "\n\n")
 
 	// Status
 	status := "        ✓ " + titleStyle.Render("Connected") + "\n\n"
@@ -175,19 +180,17 @@ func (m model) View() string {
 	// Keybinds
 	s.WriteString(infoStyle.Render("        ↑/↓: navigate  •  Enter: execute  •  q: quit  •  ?: help") + "\n")
 
-	s.WriteString(accentStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n")
+	s.WriteString(borderStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n")
 
 	return s.String()
 }
 
 func (m model) logoView() string {
 	logo := logoStyle.Render(`
-        ████      ████
-        ████      ████
-            ████████
-            ████████
-        ████          ████
-        ████          ████
+          ███  ███
+          ████████
+          ████████
+          ███  ███
 `)
 	return logo
 }
