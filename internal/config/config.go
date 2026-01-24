@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	APIURL string `mapstructure:"api_url"`
-	Token  string `mapstructure:"token"`
-	Project string `mapstructure:"project"`
+	APIURL       string `mapstructure:"api_url"`
+	Token        string `mapstructure:"token"`
+	Project      string `mapstructure:"project"`
+	Organization string `mapstructure:"organization"`
 }
 
 var cfg *Config

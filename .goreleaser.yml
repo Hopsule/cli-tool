@@ -35,12 +35,11 @@ checksum:
   name_template: "checksums.txt"
 
 brews:
-  - name: hopsule
-    repository:
+  - repository:
       owner: Hopsule
       name: homebrew-tap
       token: "{{ .Env.GITHUB_TOKEN }}"
-    folder: Formula
+    directory: Formula
     homepage: https://github.com/Hopsule/cli-tool
     description: "Decision-first workflow management CLI"
     license: MIT
