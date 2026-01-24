@@ -68,7 +68,7 @@ hopsule
 ████▙      █████  Decision & Memory Layer
 ████▙      █████  for AI teams & coding tools
 ▝▀▀▀▀▄▄▄▄▄▄▛▀▀▀▘
-     ███████▄     v0.6.2
+     ███████▄     v0.7.0
      █████████▖   ─────────────────────────────
 ▄▄▄▄▄▀▀▀▀▀▀████▙  Get started
 ████▙      █████  > hopsule init     (create config)
