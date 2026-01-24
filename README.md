@@ -39,19 +39,19 @@ hopsule
 
 **Output:**
 ```
-        ████      ████                       Hopsule
-        ████      ████                       Decision & Memory Layer
-            ████████                         for AI teams & coding tools
-            ████████
-        ████          ████                   v0.4.2
-        ████          ████                   ─────────────────────────────
-                                             Get started
-                                             > hopsule init     (create config)
-                                               hopsule login    (authenticate)
-                                               hopsule connect  (link repo)
-                                               hopsule dev      (interactive TUI)
+▟███▙      ▟███▙  Hopsule
+████▙      █████  Decision & Memory Layer
+████▙      █████  for AI teams & coding tools
+▝▀▀▀▀▄▄▄▄▄▄▛▀▀▀▘
+     ███████▄     v0.6.0
+     █████████▖   ─────────────────────────────
+▄▄▄▄▄▀▀▀▀▀▀████▙  Get started
+████▙      █████  > hopsule init     (create config)
+████▙      ████▙    hopsule login    (authenticate)
+▜███▛      ▜███▛    hopsule connect  (link repo)
+                    hopsule dev      (interactive TUI)
 
-                                             view all commands
+                  view all commands
 ```
 
 **Keyboard Shortcuts:**
