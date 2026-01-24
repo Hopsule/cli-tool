@@ -32,12 +32,10 @@ var (
 
 	selectedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "255"}).
-			Bold(true).
-			PaddingLeft(2)
+			Bold(true)
 
 	normalStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "250"}).
-			PaddingLeft(4)
+			Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "250"})
 
 	logoStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "238", Dark: "252"})
@@ -60,14 +58,10 @@ var (
 
 func NewInteractiveModel(cfg *config.Config) model {
 	commands := []command{
-		{"hopsule config", "Configure CLI settings", "config"},
-		{"hopsule list", "List all decisions", "list"},
-		{"hopsule create", "Create a new decision", "create"},
-		{"hopsule get <id>", "Get decision details", "get"},
-		{"hopsule accept <id>", "Accept a decision", "accept"},
-		{"hopsule deprecate <id>", "Deprecate a decision", "deprecate"},
-		{"hopsule status", "Show project status", "status"},
-		{"hopsule sync", "Sync with decision-api", "sync"},
+		{"hopsule init", "create config", "config"},
+		{"hopsule login", "authenticate", "login"},
+		{"hopsule connect", "link repo", "connect"},
+		{"hopsule dev", "interactive TUI", "dev"},
 	}
 
 	return model{
@@ -127,12 +121,6 @@ func (m model) View() string {
 
 	var s strings.Builder
 
-	// Top border - using a dedicated border style
-	borderStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.AdaptiveColor{Light: "240", Dark: "248"})
-	
-	s.WriteString(borderStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n\n")
-
 	// Logo and info side by side
 	logo := m.logoView()
 	info := m.infoView()
@@ -141,94 +129,43 @@ func (m model) View() string {
 	s.WriteString(m.sideBySide(logo, info))
 
 	s.WriteString("\n")
-	s.WriteString(borderStyle.Render("        ─────────────────────────────────────────────────────────────────────────────") + "\n\n")
-
-	// Status
-	status := "        ✓ " + titleStyle.Render("Connected") + "\n\n"
-	if m.cfg.APIURL == "" {
-		status = "        ⚠ " + versionStyle.Render("Not configured yet") + "\n\n"
-	}
-	s.WriteString(status)
-
-	// Commands section
-	s.WriteString("        " + titleStyle.Render("Get started") + "\n\n")
-
-	for i, cmd := range m.commands {
-		if i == m.selected {
-			s.WriteString(selectedStyle.Render(fmt.Sprintf("❯ %-25s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
-		} else {
-			s.WriteString(normalStyle.Render(fmt.Sprintf("  %-25s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
-		}
-	}
-
-	s.WriteString("\n")
-
-	// Footer
-	apiURL := "http://localhost:8080"
-	if m.cfg.APIURL != "" {
-		apiURL = m.cfg.APIURL
-	}
-
-	tokenStatus := versionStyle.Render("not set")
-	if m.cfg.Token != "" {
-		tokenStatus = accentStyle.Render("configured ✓")
-	}
-
-	s.WriteString(fmt.Sprintf("        %s: %s\n", infoStyle.Render("API"), accentStyle.Render(apiURL)))
-	s.WriteString(fmt.Sprintf("        %s: %s\n\n", infoStyle.Render("Token"), tokenStatus))
-
-	// Keybinds
-	s.WriteString(infoStyle.Render("        ↑/↓: navigate  •  Enter: execute  •  q: quit  •  ?: help") + "\n")
-
-	s.WriteString(borderStyle.Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━") + "\n")
 
 	return s.String()
 }
 
 func (m model) logoView() string {
 	logo := logoStyle.Render(`
-          ███  ███
-          ████████
-          ████████
-          ███  ███
+        ████      ████
+        ████      ████
+            ████████
+            ████████
+        ████          ████
+        ████          ████
 `)
 	return logo
 }
 
 func (m model) infoView() string {
-	org := "hopsule-inc"
-	if m.cfg.Organization != "" {
-		org = m.cfg.Organization
-	}
-
-	project := "app"
-	if m.cfg.Project != "" {
-		project = truncate(m.cfg.Project, 30)
-	}
-
 	var s strings.Builder
 
 	s.WriteString("        " + titleStyle.Render("Hopsule") + "\n")
-	s.WriteString("        " + versionStyle.Render("The future of dev governance") + "\n\n")
+	s.WriteString("        " + infoStyle.Render("Decision & Memory Layer") + "\n")
+	s.WriteString("        " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
 
-	s.WriteString(fmt.Sprintf("        %s: %s  •  %s: %s\n",
-		infoStyle.Render("org"), accentStyle.Render(org),
-		infoStyle.Render("project"), accentStyle.Render(project)))
+	s.WriteString("        " + versionStyle.Render("v0.4.2") + "\n")
+	s.WriteString("        " + versionStyle.Render("─────────────────────────────") + "\n")
+	s.WriteString("        " + titleStyle.Render("Get started") + "\n")
 
-	captureStatus := accentStyle.Render("ON")
-	syncStatus := accentStyle.Render("ON")
-	privacy := versionStyle.Render("redacted")
+	// Command list
+	for i, cmd := range m.commands {
+		if i == m.selected {
+			s.WriteString("        " + selectedStyle.Render(fmt.Sprintf("> %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
+		} else {
+			s.WriteString("        " + normalStyle.Render(fmt.Sprintf("  %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
+		}
+	}
 
-	s.WriteString(fmt.Sprintf("        %s: %s  •  %s: %s  •  %s: %s\n",
-		infoStyle.Render("capture"), captureStatus,
-		infoStyle.Render("sync"), syncStatus,
-		infoStyle.Render("privacy"), privacy))
-
-	s.WriteString(fmt.Sprintf("        %s: %s  •  %s: %s\n",
-		infoStyle.Render("last sync"), versionStyle.Render("12s"),
-		infoStyle.Render("latency"), accentStyle.Render("84ms")))
-
-	s.WriteString("\n        " + versionStyle.Render("v0.1.1") + "\n")
+	s.WriteString("\n        " + infoStyle.Render("view all commands") + "\n")
 
 	return s.String()
 }
