@@ -161,7 +161,7 @@ func (m model) infoView() string {
 	s.WriteString("  " + infoStyle.Render("Decision & Memory Layer") + "\n")
 	s.WriteString("  " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
 
-	s.WriteString("  " + versionStyle.Render("v0.6.0") + "\n")
+	s.WriteString("  " + versionStyle.Render("v0.6.1") + "\n")
 	s.WriteString("  " + versionStyle.Render("─────────────────────────────") + "\n")
 	s.WriteString("  " + titleStyle.Render("Get started") + "\n")
 

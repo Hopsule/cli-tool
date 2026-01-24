@@ -17,16 +17,41 @@
 
 ### Installation
 
-#### Homebrew (macOS/Linux)
+#### Windows
+
+**PowerShell**
+```powershell
+# Download and extract
+Invoke-WebRequest -Uri https://github.com/Hopsule/cli-tool/releases/latest/download/decision-windows-amd64.zip -OutFile hopsule.zip
+Expand-Archive hopsule.zip -DestinationPath .
+Rename-Item decision-windows-amd64.exe hopsule.exe
+
+# Run
+.\hopsule.exe
+```
+
+**Manual Download**
+1. Download [decision-windows-amd64.zip](https://github.com/Hopsule/cli-tool/releases/latest)
+2. Extract and rename to `hopsule.exe`
+3. Add to PATH (optional)
+
+#### macOS
+
+**Homebrew (Recommended)**
 ```bash
 brew install hopsule/tap/hopsule
 ```
 
-#### Manual Installation
+**Manual**
 ```bash
-# macOS ARM64 (M1/M2/M3)
+# Apple Silicon (M1/M2/M3)
 curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-arm64.tar.gz | tar xz
 mv decision-darwin-arm64 /usr/local/bin/hopsule
+chmod +x /usr/local/bin/hopsule
+
+# Intel
+curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-amd64.tar.gz | tar xz
+mv decision-darwin-amd64 /usr/local/bin/hopsule
 chmod +x /usr/local/bin/hopsule
 ```
 
@@ -43,7 +68,7 @@ hopsule
 ████▙      █████  Decision & Memory Layer
 ████▙      █████  for AI teams & coding tools
 ▝▀▀▀▀▄▄▄▄▄▄▛▀▀▀▘
-     ███████▄     v0.6.0
+     ███████▄     v0.6.1
      █████████▖   ─────────────────────────────
 ▄▄▄▄▄▀▀▀▀▀▀████▙  Get started
 ████▙      █████  > hopsule init     (create config)
@@ -77,6 +102,12 @@ hopsule
 - **decision-api** running and accessible
 - **JWT Token** for authentication
 - **Project ID** for your project
+
+## 💻 Supported Platforms
+
+- ✅ Windows 10/11 (AMD64, ARM64)
+- ✅ macOS 11+ (Apple Silicon, Intel)
+- ✅ Linux (coming soon)
 
 ## ⚙️ Configuration
 
