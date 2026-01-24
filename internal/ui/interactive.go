@@ -141,10 +141,10 @@ func (m model) View() string {
 func (m model) logoView() string {
 	logo := logoStyle.Render(`
   ⢠⣶⣶⣶⣶⣶⣶⣶⣆     	 ⣴⣶⣶⣶⣶⣶⣶⣶⡄
-  ⢸⣿⣯⣷⣿⢿⣾⣟⣿    	 	 ⣿⣿⣽⣾⡿⣷⡿⣯⡇
-  ⢸⣿⣾⣟⣿⣟⣯⣿⣿      	 ⣿⣷⣿⣻⡿⣟⣿⣿⡇
+  ⢸⣿⣯⣷⣿⢿⣾⣟⣿     	 ⣿⣿⣽⣾⡿⣷⡿⣯⡇
+  ⢸⣿⣾⣟⣿⣟⣯⣿⣿     	 ⣿⣷⣿⣻⡿⣟⣿⣿⡇
   ⢸⣿⡾⣿⣯⣿⣟⣿⣾     	 ⣿⣷⡿⣟⣿⣿⣟⣷⡇
-  ⠘⢿⣻⣿⣽⣾⣿⣻⣽    		 ⣿⣷⣿⣿⢿⣷⣿⠿⠃
+  ⠘⢿⣻⣿⣽⣾⣿⣻⣽     	 ⣿⣷⣿⣿⢿⣷⣿⠿⠃
            ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀
            ⣿⡿⣾⣿⡾⣿⣾⢿⣾⡿⣾⣿⣿⣄
            ⣿⣿⣻⣷⣿⣿⣻⣿⣯⣿⡿⣯⣿⣻⣿⣄
@@ -152,8 +152,8 @@ func (m model) logoView() string {
   ⢠⣾⣿⣿⢿⣿⡿⣿⣿     	 ⣿⣽⣿⣽⣷⣿⡿⣟⡇
   ⢸⣿⢷⣿⣿⣻⣿⣻⣽     	 ⣿⣿⣽⣯⣿⣾⣿⣿⡇
   ⢸⣿⢿⣻⣾⣿⣻⣿⣻     	 ⣿⣷⣿⣯⣿⣷⣿⣾⡇
-  ⢸⣿⢿⣿⣻⣽⣿⣽⣿      	 ⣿⣷⡿⣷⣿⣾⣷⡿⡇
-  ⠘⠿⠿⠻⠿⠻⠽⠿⠾      	 ⠻⠷⠿⠿⠻⠾⠟⠿⠁
+  ⢸⣿⢿⣿⣻⣽⣿⣽⣿     	 ⣿⣷⡿⣷⣿⣾⣷⡿⡇
+  ⠘⠿⠿⠻⠿⠻⠽⠿⠾     	 ⠻⠷⠿⠿⠻⠾⠟⠿⠁
 `)
 	return logo
 }
@@ -165,7 +165,7 @@ func (m model) infoView() string {
 	s.WriteString("  " + infoStyle.Render("Decision & Memory Layer") + "\n")
 	s.WriteString("  " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
 
-	s.WriteString("  " + versionStyle.Render("v0.7.3") + "\n")
+	s.WriteString("  " + versionStyle.Render("v0.7.4") + "\n")
 	s.WriteString("  " + versionStyle.Render("─────────────────────────────") + "\n")
 	s.WriteString("  " + titleStyle.Render("Get started") + "\n")
 
