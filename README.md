@@ -3,6 +3,8 @@
 > Decision & Memory Layer for AI teams & coding tools
 
 [![Release](https://img.shields.io/github/v/release/Hopsule/cli-tool)](https://github.com/Hopsule/cli-tool/releases)
+[![CI](https://github.com/Hopsule/cli-tool/workflows/CI/badge.svg)](https://github.com/Hopsule/cli-tool/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Hopsule/cli-tool)](https://goreportcard.com/report/github.com/Hopsule/cli-tool)
 [![License](https://img.shields.io/github/license/Hopsule/cli-tool)](LICENSE)
 
 ## ✨ Features
@@ -18,6 +20,13 @@
 ### Installation
 
 #### Homebrew (macOS/Linux)
+
+**Official Homebrew (coming soon):**
+```bash
+brew install hopsule
+```
+
+**Current (Tap):**
 ```bash
 brew install hopsule/tap/hopsule
 ```

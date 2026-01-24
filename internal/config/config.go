@@ -15,6 +15,17 @@ type Config struct {
 	Organization string `mapstructure:"organization"`
 }
 
+// Validate checks if the config has all required fields
+func (c *Config) Validate() error {
+	if c.APIURL == "" {
+		return fmt.Errorf("api_url is required")
+	}
+	if c.Project == "" {
+		return fmt.Errorf("project is required")
+	}
+	return nil
+}
+
 var cfg *Config
 
 // LoadConfig loads configuration from file and environment variables
