@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/Cagangedik/cli-tool/internal/config"
+	"github.com/fatih/color"
 )
 
 var (
@@ -51,19 +51,19 @@ func PrintDashboard(cfg *config.Config) {
 	captureStatus := green("ON")
 	syncStatus := green("ON")
 	privacy := yellow("redacted")
-	
+
 	lastSync := "12s"
 	latency := "84ms"
 
-	fmt.Printf("        %s: %s  •  %s: %s\n", 
+	fmt.Printf("        %s: %s  •  %s: %s\n",
 		gray("org"), cyan(org),
 		gray("project"), cyan(project))
-	
+
 	fmt.Printf("        %s: %s  •  %s: %s  •  %s: %s\n",
 		gray("capture"), captureStatus,
 		gray("sync"), syncStatus,
 		gray("privacy"), privacy)
-	
+
 	fmt.Printf("        %s: %s  •  %s: %s\n",
 		gray("last sync"), yellow(lastSync),
 		gray("latency"), green(latency))
@@ -87,7 +87,7 @@ func PrintDashboard(cfg *config.Config) {
 
 	// API Info
 	fmt.Printf("        %s: %s\n", gray("API"), cyan(apiURL))
-	
+
 	if cfg.Token != "" {
 		fmt.Printf("        %s: %s\n", gray("Token"), green("configured ✓"))
 	} else {
@@ -146,7 +146,7 @@ func truncate(s string, maxLen int) string {
 // FormatTime formats time ago
 func FormatTime(t time.Time) string {
 	duration := time.Since(t)
-	
+
 	if duration < time.Minute {
 		return fmt.Sprintf("%ds", int(duration.Seconds()))
 	}

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Cagangedik/cli-tool/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/Cagangedik/cli-tool/internal/config"
 )
 
 type command struct {
@@ -140,16 +140,16 @@ func (m model) View() string {
 
 func (m model) logoView() string {
 	logo := logoStyle.Render(`
-                      ▟█▛█▙      ▟█▛█▙
-                      █▛██▙      █▙██▛
-                      ███▛▙      ▛██▛█
-                      ▝▘▀▀▀▄▄▄▄▄▄▛▀▝▀▘
+                      ▟███▙      ▟███▙
+                      ████▙      █████
+                      ████▙      █████
+                      ▝▀▀▀▀▄▄▄▄▄▄▛▀▀▀▘
                            ███████▄
-                           █▛██▛█▟██▖
-                      ▄▄▄▄▄▀▀▀▘▀▀█▛▙█▙
-                      █▜▛█▙      █████
-                      ████▙      ▙██▜▙
-                      ▜▜▛▙▛      ▜█▟█▛
+                           █████████▖
+                      ▄▄▄▄▄▀▀▀▀▀▀████▙
+                      ████▙      █████
+                      ████▙      ████▙
+                      ▜███▛      ▜███▛
 `)
 	return logo
 }
@@ -202,12 +202,12 @@ func (m model) sideBySide(left, right string) string {
 		// Use lipgloss Width to get actual display width (handles ANSI codes)
 		leftWidth := lipgloss.Width(leftLine)
 		paddingNeeded := 40 - leftWidth
-		
+
 		// Ensure non-negative padding
 		if paddingNeeded < 0 {
 			paddingNeeded = 0
 		}
-		
+
 		leftPadded := leftLine + strings.Repeat(" ", paddingNeeded)
 		result.WriteString(leftPadded + rightLine + "\n")
 	}
@@ -258,12 +258,12 @@ func RunInteractive(cfg *config.Config) (string, error) {
 	}
 
 	m := finalModel.(model)
-	
+
 	// If selected is -1, user pressed 'q' to quit
 	if m.selected == -1 {
 		return "", nil
 	}
-	
+
 	// If selected is valid, return the command to execute
 	if m.selected >= 0 && m.selected < len(m.commands) {
 		return m.commands[m.selected].execute, nil
