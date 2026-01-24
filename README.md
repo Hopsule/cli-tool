@@ -19,8 +19,7 @@
 
 #### Homebrew (macOS/Linux)
 ```bash
-brew tap hopsule/tap
-brew install hopsule
+brew install hopsule/tap/hopsule
 ```
 
 #### Manual Installation

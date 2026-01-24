@@ -157,24 +157,24 @@ func (m model) logoView() string {
 func (m model) infoView() string {
 	var s strings.Builder
 
-	s.WriteString("        " + titleStyle.Render("Hopsule") + "\n")
-	s.WriteString("        " + infoStyle.Render("Decision & Memory Layer") + "\n")
-	s.WriteString("        " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
+	s.WriteString("  " + titleStyle.Render("Hopsule") + "\n")
+	s.WriteString("  " + infoStyle.Render("Decision & Memory Layer") + "\n")
+	s.WriteString("  " + infoStyle.Render("for AI teams & coding tools") + "\n\n")
 
-	s.WriteString("        " + versionStyle.Render("v0.4.2") + "\n")
-	s.WriteString("        " + versionStyle.Render("─────────────────────────────") + "\n")
-	s.WriteString("        " + titleStyle.Render("Get started") + "\n")
+	s.WriteString("  " + versionStyle.Render("v0.4.3") + "\n")
+	s.WriteString("  " + versionStyle.Render("─────────────────────────────") + "\n")
+	s.WriteString("  " + titleStyle.Render("Get started") + "\n")
 
 	// Command list
 	for i, cmd := range m.commands {
 		if i == m.selected {
-			s.WriteString("        " + selectedStyle.Render(fmt.Sprintf("> %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
+			s.WriteString("  " + selectedStyle.Render(fmt.Sprintf("> %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
 		} else {
-			s.WriteString("        " + normalStyle.Render(fmt.Sprintf("  %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
+			s.WriteString("  " + normalStyle.Render(fmt.Sprintf("  %-15s %s", cmd.name, infoStyle.Render("("+cmd.description+")"))) + "\n")
 		}
 	}
 
-	s.WriteString("\n        " + infoStyle.Render("view all commands") + "\n")
+	s.WriteString("\n  " + infoStyle.Render("view all commands") + "\n")
 
 	return s.String()
 }
@@ -201,7 +201,7 @@ func (m model) sideBySide(left, right string) string {
 
 		// Use lipgloss Width to get actual display width (handles ANSI codes)
 		leftWidth := lipgloss.Width(leftLine)
-		paddingNeeded := 40 - leftWidth
+		paddingNeeded := 24 - leftWidth
 
 		// Ensure non-negative padding
 		if paddingNeeded < 0 {

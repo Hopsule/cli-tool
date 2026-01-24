@@ -5,20 +5,10 @@
 ### Option 1: Homebrew (Recommended - macOS/Linux)
 
 ```bash
-# Add Hopsule tap
-brew tap hopsule/tap
-
-# Install Hopsule CLI
-brew install hopsule
-```
-
-### Option 2: One-line Install
-
-```bash
 brew install hopsule/tap/hopsule
 ```
 
-### Option 3: Manual Installation
+### Option 2: Manual Installation
 
 #### macOS ARM64 (M1/M2/M3)
 ```bash
