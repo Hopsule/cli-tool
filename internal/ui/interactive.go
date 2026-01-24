@@ -250,8 +250,16 @@ func (m model) sideBySide(left, right string) string {
 			rightLine = rightLines[i]
 		}
 
-		// Pad left to 40 chars
-		leftPadded := leftLine + strings.Repeat(" ", 40-len(stripAnsi(leftLine)))
+		// Use lipgloss Width to get actual display width (handles ANSI codes)
+		leftWidth := lipgloss.Width(leftLine)
+		paddingNeeded := 40 - leftWidth
+		
+		// Ensure non-negative padding
+		if paddingNeeded < 0 {
+			paddingNeeded = 0
+		}
+		
+		leftPadded := leftLine + strings.Repeat(" ", paddingNeeded)
 		result.WriteString(leftPadded + rightLine + "\n")
 	}
 
@@ -291,23 +299,7 @@ Press ? to close this help
 	return helpStyle.Render(help)
 }
 
-func stripAnsi(s string) string {
-	// Simple ANSI strip (for padding calculation)
-	// This is a simplified version, not perfect
-	result := s
-	result = strings.ReplaceAll(result, "\x1b", "")
-	// Remove color codes pattern
-	for strings.Contains(result, "[") && strings.Contains(result, "m") {
-		start := strings.Index(result, "[")
-		end := strings.Index(result[start:], "m")
-		if end != -1 {
-			result = result[:start] + result[start+end+1:]
-		} else {
-			break
-		}
-	}
-	return result
-}
+// stripAnsi is no longer needed - using lipgloss.Width instead
 
 func RunInteractive(cfg *config.Config) (string, error) {
 	p := tea.NewProgram(NewInteractiveModel(cfg))
