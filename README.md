@@ -1,254 +1,202 @@
-# Decision CLI
+# Hopsule CLI
 
-CLI tool for decision-first workflow management.
+> Decision-first workflow management CLI with interactive terminal UI
 
-## Architecture
+[![Release](https://img.shields.io/github/v/release/Hopsule/cli-tool)](https://github.com/Hopsule/cli-tool/releases)
+[![License](https://img.shields.io/github/license/Hopsule/cli-tool)](LICENSE)
 
-**IMPORTANT**: This CLI tool is a **CLIENT** that communicates with `decision-api`, the single authoritative source for all decisions.
+## ✨ Features
+
+- 🎨 **Interactive TUI** - Daytona-style terminal interface
+- ⚡ **Arrow Key Navigation** - Navigate commands with ↑/↓
+- ⌨️ **Keyboard Shortcuts** - Full keyboard control (Enter, q, ?)
+- 📊 **Real-time Status** - Live connection and sync status
+- 🎯 **Command Execution** - Execute commands directly from TUI
+- 🔧 **Configuration** - Easy setup with `hopsule config`
+- 🌈 **Colored Output** - Beautiful terminal styling
+
+## 🚀 Quick Start
+
+### Installation
+
+#### Homebrew (macOS/Linux)
+```bash
+brew tap hopsule/tap
+brew install hopsule
+```
+
+#### Manual Installation
+```bash
+# macOS ARM64 (M1/M2/M3)
+curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-arm64.tar.gz | tar xz
+mv decision-darwin-arm64 /usr/local/bin/hopsule
+chmod +x /usr/local/bin/hopsule
+```
+
+### Usage
+
+#### Interactive Mode
+```bash
+# Launch interactive dashboard
+hopsule
+```
+
+**Keyboard Shortcuts:**
+- `↑/↓` or `k/j` - Navigate commands
+- `Enter` - Execute selected command
+- `q` - Quit
+- `?` - Toggle help
+
+#### Direct Commands
+```bash
+# Configure CLI
+hopsule config
+
+# List all decisions
+hopsule list
+
+# Create new decision
+hopsule create
+
+# Get decision details
+hopsule get <decision-id>
+
+# Accept decision
+hopsule accept <decision-id>
+
+# Deprecate decision
+hopsule deprecate <decision-id>
+
+# Show project status
+hopsule status
+
+# Sync with decision-api
+hopsule sync
+```
+
+## 📋 Requirements
+
+- **decision-api** running and accessible
+- **JWT Token** for authentication
+- **Project ID** for your project
+
+## ⚙️ Configuration
+
+### Interactive Setup
+```bash
+hopsule config
+```
+
+### Manual Configuration
+
+Config file: `~/.decision-cli/config.yaml`
+
+```yaml
+api_url: http://localhost:8080
+project: your-project-id
+organization: your-org-name
+token: your-jwt-token
+```
+
+### Environment Variables
+```bash
+export DECISION_API_URL=http://localhost:8080
+export DECISION_PROJECT=your-project-id
+export DECISION_TOKEN=your-jwt-token
+```
+
+## 🎯 Commands
+
+| Command | Description |
+|---------|-------------|
+| `hopsule` | Launch interactive dashboard |
+| `hopsule config` | Configure CLI settings |
+| `hopsule list` | List all decisions |
+| `hopsule get <id>` | Get decision details |
+| `hopsule create` | Create new decision |
+| `hopsule accept <id>` | Accept a decision |
+| `hopsule deprecate <id>` | Deprecate a decision |
+| `hopsule status` | Show project status |
+| `hopsule sync` | Sync with decision-api |
+| `hopsule --help` | Show help |
+| `hopsule --version` | Show version |
+
+## 🏗️ Architecture
+
+Hopsule CLI is a **client-only tool** that communicates with `decision-api`:
+
+- ✅ **Strictly Advisory** - Cannot create authority independently
+- ✅ **API-First** - All operations go through decision-api
+- ✅ **No Direct Database Access** - Only communicates via API
+- ✅ **Stateless** - Configuration stored locally, state in API
 
 ### Authority Model
 
-- **decision-api** is the ONLY authoritative component
-- This CLI MUST NOT bypass decision-api
-- This CLI MUST NOT create authority independently
-- All state changes flow through decision-api
-
-The CLI:
-- ✅ Makes HTTP requests to decision-api
-- ✅ Displays decisions, memories, and context packs
-- ✅ Requests state changes from decision-api
-- ❌ Does NOT own data
-- ❌ Does NOT decide anything
-- ❌ Does NOT create authority
-
-## Installation
-
-### From Source
-
-```bash
-git clone https://github.com/Cagangedik/cli-tool.git
-cd cli-tool
-go build -o decision ./cmd/decision
-sudo mv decision /usr/local/bin/
+```
+┌─────────────────┐
+│   Hopsule CLI   │  ← Client (No Authority)
+└────────┬────────┘
+         │
+         │ API Calls
+         │
+         ▼
+┌─────────────────┐
+│  decision-api   │  ← Single Authority
+└─────────────────┘
 ```
 
-### Using go install
-
-```bash
-go install github.com/Cagangedik/cli-tool/cmd/decision@latest
-```
-
-### Binary Download
-
-Download pre-built binaries from [Releases](https://github.com/Cagangedik/cli-tool/releases).
-
-## Configuration
-
-### Initial Setup
-
-Run the interactive configuration:
-
-```bash
-decision config
-```
-
-This will prompt for:
-- API URL (default: `http://localhost:8080`)
-- Authentication token
-- Default project ID
-
-Configuration is saved to `~/.decision-cli/config.yaml`.
-
-### Environment Variables
-
-You can also set configuration via environment variables:
-
-```bash
-export DECISION_API_URL="https://api.example.com"
-export DECISION_TOKEN="your-token-here"
-export DECISION_PROJECT="project-id"
-```
-
-### Command-Line Flags
-
-All commands support global flags that override config:
-
-```bash
-decision list --api-url https://api.example.com --project <id> --token <token>
-```
-
-## Commands
-
-### `decision list`
-
-List all decisions for the current project.
-
-```bash
-decision list
-decision list --project <project-id>
-```
-
-### `decision get <decision-id>`
-
-Get detailed information about a specific decision.
-
-```bash
-decision get <decision-id>
-decision get <decision-id> --output json
-```
-
-### `decision create`
-
-Interactively create a new decision (will be in DRAFT status).
-
-```bash
-decision create
-```
-
-Prompts for:
-- Statement (title)
-- Rationale (description)
-
-### `decision accept <decision-id>`
-
-Accept a decision, moving it from DRAFT/PENDING to ACCEPTED status.
-
-```bash
-decision accept <decision-id>
-```
-
-**Note**: Only decision-api can accept decisions. This command requests acceptance from the API.
-
-### `decision deprecate <decision-id>`
-
-Deprecate a decision, moving it to DEPRECATED status.
-
-```bash
-decision deprecate <decision-id>
-```
-
-### `decision sync`
-
-Sync local state with remote decision-api.
-
-```bash
-decision sync
-```
-
-### `decision status`
-
-Show current project status and statistics.
-
-```bash
-decision status
-decision status --output json
-```
-
-### `decision config`
-
-Interactively configure CLI settings.
-
-```bash
-decision config
-```
-
-### `decision --version`
-
-Show version information.
-
-```bash
-decision --version
-```
-
-## Usage Examples
-
-### Basic Workflow
-
-```bash
-# Configure CLI
-decision config
-
-# List decisions
-decision list
-
-# Create a new decision
-decision create
-
-# Accept a decision
-decision accept <decision-id>
-
-# Check project status
-decision status
-```
-
-### With Flags
-
-```bash
-# List decisions for a specific project
-decision list --project abc123 --api-url https://api.example.com
-
-# Get decision details in JSON format
-decision get <decision-id> --output json --project abc123
-```
-
-## Development
+## 🛠️ Development
 
 ### Prerequisites
+- Go 1.24+
+- decision-api running locally
 
-- Go 1.23 or later
-- Access to decision-api instance
-
-### Building
-
+### Build from Source
 ```bash
+git clone https://github.com/Hopsule/cli-tool.git
+cd cli-tool
 go build -o decision ./cmd/decision
+./decision
 ```
 
-### Running Tests
-
+### Run Tests
 ```bash
 go test ./...
 ```
 
-### Project Structure
-
-```
-cli-tool/
-├── cmd/
-│   └── decision/
-│       └── main.go          # CLI entry point
-├── internal/
-│   ├── api/
-│   │   └── client.go        # decision-api HTTP client
-│   ├── commands/
-│   │   ├── list.go          # List command
-│   │   ├── get.go           # Get command
-│   │   ├── create.go        # Create command
-│   │   ├── accept.go        # Accept command
-│   │   ├── deprecate.go     # Deprecate command
-│   │   ├── sync.go          # Sync command
-│   │   ├── status.go        # Status command
-│   │   └── config.go        # Config command
-│   └── config/
-│       └── config.go        # Configuration management
-├── go.mod
-├── go.sum
-└── README.md
+### Install Locally
+```bash
+go install ./cmd/decision
 ```
 
-## Architecture Principles
+## 📦 Release Process
 
-This CLI tool adheres to the decision-first architecture:
+1. Update version
+2. Create git tag
+3. Build binaries
+4. Create GitHub release
+5. Update Homebrew formula
 
-1. **Single Authority**: decision-api is the only authoritative source
-2. **Client Role**: CLI is a client, not a decision-maker
-3. **No Bypass**: All operations go through decision-api
-4. **Reflective**: CLI reflects authority, does not create it
+## 🤝 Contributing
 
-## License
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-[Add license information]
+## 📄 License
 
-## Contributing
+MIT License - see [LICENSE](LICENSE) file for details
 
-[Add contributing guidelines]
+## 🔗 Links
+
+- [Decision API](https://github.com/Hopsule/api)
+- [Web App](https://github.com/Hopsule/web-app)
+- [Documentation](https://github.com/Hopsule/cli-tool/wiki)
+- [Releases](https://github.com/Hopsule/cli-tool/releases)
+
+## 📞 Support
+
+- GitHub Issues: [Report a bug](https://github.com/Hopsule/cli-tool/issues)
+- Organization: [Hopsule](https://github.com/Hopsule)
+
+---
+
+Made with ❤️ by the Hopsule team
