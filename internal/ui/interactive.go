@@ -80,11 +80,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c":
+			return m, tea.Quit
+
+		case "q":
 			if m.showHelp {
 				m.showHelp = false
 				return m, nil
 			}
+			// Set selected to -1 to indicate quit without selection
+			m.selected = -1
 			return m, tea.Quit
 
 		case "?":
@@ -249,6 +254,13 @@ func RunInteractive(cfg *config.Config) (string, error) {
 	}
 
 	m := finalModel.(model)
+	
+	// If selected is -1, user pressed 'q' to quit
+	if m.selected == -1 {
+		return "", nil
+	}
+	
+	// If selected is valid, return the command to execute
 	if m.selected >= 0 && m.selected < len(m.commands) {
 		return m.commands[m.selected].execute, nil
 	}
