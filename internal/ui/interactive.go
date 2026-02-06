@@ -135,6 +135,7 @@ type model struct {
 	hopperDecisions   []api.Decision  // RAG context for Hopper
 	hopperMemories    []*api.Memory   // RAG context for Hopper
 	hopperContextLoaded bool
+	hopperSessionID   string
 	
 	// Selection
 	selected      int
@@ -230,6 +231,7 @@ func NewInteractiveModel(cfg *config.Config) model {
 	m := model{
 		cfg:      cfg,
 		selected: 0,
+		hopperSessionID: fmt.Sprintf("cli-%d", time.Now().UnixNano()),
 	}
 	
 	if isLoggedIn {
@@ -366,8 +368,8 @@ func (m model) sendHopperMessage() (tea.Model, tea.Cmd) {
 	// Build TaggedItems from decisions and memories for RAG context
 	var taggedItems []api.TaggedItem
 	
-	// Add all decisions as context (limit to 20 for token efficiency)
-	decisionLimit := 20
+	// Add decisions as context (limit to 10 for speed)
+	decisionLimit := 10
 	if len(m.hopperDecisions) < decisionLimit {
 		decisionLimit = len(m.hopperDecisions)
 	}
@@ -376,13 +378,13 @@ func (m model) sendHopperMessage() (tea.Model, tea.Cmd) {
 		taggedItems = append(taggedItems, api.TaggedItem{
 			ID:        d.ID,
 			Type:      "decision",
-			Statement: d.Statement,
-			Content:   d.Rationale,
+			Statement: truncateString(d.Statement, 160),
+			Content:   truncateString(d.Rationale, 240),
 		})
 	}
 	
-	// Add all memories as context (limit to 30 for token efficiency)
-	memoryLimit := 30
+	// Add memories as context (limit to 15 for speed)
+	memoryLimit := 15
 	if len(m.hopperMemories) < memoryLimit {
 		memoryLimit = len(m.hopperMemories)
 	}
@@ -391,7 +393,7 @@ func (m model) sendHopperMessage() (tea.Model, tea.Cmd) {
 		taggedItems = append(taggedItems, api.TaggedItem{
 			ID:      mem.ID,
 			Type:    "memory",
-			Content: mem.Content,
+			Content: truncateString(mem.Content, 240),
 		})
 	}
 	
@@ -410,6 +412,7 @@ func (m model) sendHopperMessage() (tea.Model, tea.Cmd) {
 			ConversationHistory: history,
 			TaggedItems:         taggedItems,
 			Stream:              true,
+			SessionID:           m.hopperSessionID,
 			ProjectName:         projectName,
 		}
 		
@@ -619,8 +622,8 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.currentView == viewTasks || m.currentView == viewBrain {
 			m.currentView = viewProjectMenu
 			m.selected = 0
-			return m, nil
-		}
+				return m, nil
+			}
 		if m.currentView == viewProjectMenu {
 			m.currentView = viewProjects
 			m.currentProj = nil
@@ -633,8 +636,8 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selected = 0
 			return m, nil
 		}
-		return m, tea.Quit
-		
+			return m, tea.Quit
+
 	case "esc":
 		// Feature views go back to project menu
 		if m.currentView == viewDashboard || m.currentView == viewDecisions ||
@@ -656,21 +659,21 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selected = 0
 			return m, nil
 		}
-		return m, nil
-		
-	case "up", "k":
-		if m.selected > 0 {
-			m.selected--
+			return m, nil
+
+		case "up", "k":
+			if m.selected > 0 {
+				m.selected--
 			// Scroll up if selection goes above visible area
 			if m.selected < m.scrollOffset {
 				m.scrollOffset = m.selected
 			}
-		}
-		
-	case "down", "j":
+			}
+
+		case "down", "j":
 		maxSel := m.getMaxSelection() - 1
 		if m.selected < maxSel {
-			m.selected++
+				m.selected++
 			// Scroll down if selection goes below visible area (10 items visible)
 			visibleItems := 10
 			if m.selected >= m.scrollOffset+visibleItems {
@@ -800,7 +803,7 @@ func (m model) handleSelect() (tea.Model, tea.Cmd) {
 			m.executeCmd = "logout"
 			return m, tea.Quit
 		}
-		
+
 	case viewProjects:
 		orgProjects := m.getOrgProjects()
 		if m.selected < len(orgProjects) {
@@ -875,7 +878,7 @@ func (m model) handleSelect() (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	
+
 	return m, nil
 }
 
@@ -1036,11 +1039,11 @@ func (m model) renderOrganizationsView() string {
 		s += "  " + dimStyle.Render("Create one at https://hopsule.com") + "\n"
 	} else {
 		for i, org := range m.organizations {
-			if i == m.selected {
+		if i == m.selected {
 				s += "  " + selectedStyle.Render("> ")
 				s += accentStyle.Render(org.Name)
 				s += " " + dimStyle.Render("@"+org.Slug)
-			} else {
+		} else {
 				s += "    "
 				s += normalStyle.Render(org.Name)
 				s += " " + dimStyle.Render("@"+org.Slug)
@@ -1947,7 +1950,7 @@ func RunInteractive() (string, error) {
 	if cfg == nil {
 		cfg = &config.Config{}
 	}
-
+	
 	p := tea.NewProgram(NewInteractiveModel(cfg), tea.WithAltScreen())
 	finalModel, err := p.Run()
 	if err != nil {

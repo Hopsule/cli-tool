@@ -765,6 +765,7 @@ type ChatRequest struct {
 	ConversationHistory []ChatMessage `json:"conversationHistory,omitempty"`
 	TaggedItems         []TaggedItem  `json:"taggedItems,omitempty"`
 	Stream              bool          `json:"stream"`
+	SessionID           string        `json:"sessionId,omitempty"`
 	ProjectName         string        `json:"projectName,omitempty"`
 }
 
