@@ -247,15 +247,15 @@ func (c *Client) GetProjectStatus(projectID string) (*ProjectStatus, error) {
 
 // Types matching decision-api schema
 type Decision struct {
-	ID          string   `json:"id"`
-	Statement   string   `json:"statement"`
-	Rationale   string   `json:"rationale"`
-	Status      string   `json:"status"` // DRAFT, PENDING, ACCEPTED, REJECTED, DEPRECATED
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
-	AcceptedAt  *string  `json:"accepted_at,omitempty"`
-	AcceptedBy  *string  `json:"accepted_by,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
+	ID         string   `json:"id"`
+	Statement  string   `json:"statement"`
+	Rationale  string   `json:"rationale"`
+	Status     string   `json:"status"` // DRAFT, PENDING, ACCEPTED, REJECTED, DEPRECATED
+	CreatedAt  string   `json:"created_at"`
+	UpdatedAt  string   `json:"updated_at"`
+	AcceptedAt *string  `json:"accepted_at,omitempty"`
+	AcceptedBy *string  `json:"accepted_by,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
 }
 
 type CreateDecisionRequest struct {
@@ -609,12 +609,12 @@ type SearchRequest struct {
 
 // SearchResult represents a single search result
 type SearchResult struct {
-	ID         string  `json:"id"`
-	EntityType string  `json:"entity_type"`
-	Content    string  `json:"content,omitempty"`
-	Statement  string  `json:"statement,omitempty"`
-	Status     string  `json:"status,omitempty"`
-	Score      float64 `json:"score,omitempty"`
+	ID         string   `json:"id"`
+	EntityType string   `json:"entity_type"`
+	Content    string   `json:"content,omitempty"`
+	Statement  string   `json:"statement,omitempty"`
+	Status     string   `json:"status,omitempty"`
+	Score      float64  `json:"score,omitempty"`
 	Tags       []string `json:"tags,omitempty"`
 }
 
@@ -651,16 +651,16 @@ func (c *Client) Search(projectID string, req SearchRequest) (*SearchResponse, e
 
 // MaterializedCapsule represents a capsule with full decision and memory objects
 type MaterializedCapsule struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty"`
-	Status      string      `json:"status"`
-	Decisions   []Decision  `json:"decisions,omitempty"`
-	Memories    []*Memory   `json:"memories,omitempty"`
-	CreatedAt   string      `json:"created_at"`
-	UpdatedAt   string      `json:"updated_at"`
-	FrozenAt    *string     `json:"frozen_at,omitempty"`
-	IsActive    bool        `json:"is_active,omitempty"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	Status      string     `json:"status"`
+	Decisions   []Decision `json:"decisions,omitempty"`
+	Memories    []*Memory  `json:"memories,omitempty"`
+	CreatedAt   string     `json:"created_at"`
+	UpdatedAt   string     `json:"updated_at"`
+	FrozenAt    *string    `json:"frozen_at,omitempty"`
+	IsActive    bool       `json:"is_active,omitempty"`
 }
 
 // GetCapsuleMaterialized retrieves a capsule with full decisions and memories
@@ -739,35 +739,35 @@ func (c *Client) GetTask(projectID, taskID string) (*Task, error) {
 
 // Task represents a project task
 type Task struct {
-	ID          string   `json:"id"`
-	Title       string   `json:"title"`
-	Description string   `json:"description,omitempty"`
-	Status      string   `json:"status"` // TODO, IN_PROGRESS, REVIEW, DONE
-	Priority    string   `json:"priority"` // LOW, MEDIUM, HIGH
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
-	CompletedAt *string  `json:"completed_at,omitempty"`
-	OwnerID     string   `json:"owner_id,omitempty"`
-	OwnerName   string   `json:"owner_name,omitempty"`
+	ID                 string   `json:"id"`
+	Title              string   `json:"title"`
+	Description        string   `json:"description,omitempty"`
+	Status             string   `json:"status"`   // TODO, IN_PROGRESS, REVIEW, DONE
+	Priority           string   `json:"priority"` // LOW, MEDIUM, HIGH
+	CreatedAt          string   `json:"created_at"`
+	UpdatedAt          string   `json:"updated_at"`
+	CompletedAt        *string  `json:"completed_at,omitempty"`
+	OwnerID            string   `json:"owner_id,omitempty"`
+	OwnerName          string   `json:"owner_name,omitempty"`
 	RelatedDecisionIds []string `json:"related_decision_ids,omitempty"`
 	RelatedMemoryIds   []string `json:"related_memory_ids,omitempty"`
 }
 
 // CreateTaskRequest is the request body for creating a task
 type CreateTaskRequest struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description,omitempty"`
-	Priority    string   `json:"priority,omitempty"`
+	Title              string   `json:"title"`
+	Description        string   `json:"description,omitempty"`
+	Priority           string   `json:"priority,omitempty"`
 	RelatedDecisionIds []string `json:"related_decision_ids,omitempty"`
 	RelatedMemoryIds   []string `json:"related_memory_ids,omitempty"`
 }
 
 // UpdateTaskRequest is the request body for updating a task
 type UpdateTaskRequest struct {
-	Title       string   `json:"title,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Status      string   `json:"status,omitempty"`
-	Priority    string   `json:"priority,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	Status      string `json:"status,omitempty"`
+	Priority    string `json:"priority,omitempty"`
 }
 
 // ListTasksResponse is the response from GET /tasks
@@ -1007,12 +1007,12 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 	buf := make([]byte, 4096)
 	inContent := false
 	var pending string
-	
+
 	for {
 		n, err := resp.Body.Read(buf)
 		if n > 0 {
 			pending += string(buf[:n])
-			
+
 			// Check for content start marker
 			if !inContent {
 				if idx := findIndex(pending, "__CONTENT_START__"); idx != -1 {
@@ -1029,7 +1029,7 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 					continue
 				}
 			}
-			
+
 			if inContent {
 				// Check for usage/end markers
 				endMarkers := []string{"__USAGE__", "__CONTENT_END__", "\"completion_tokens\""}
@@ -1064,7 +1064,7 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 				}
 			}
 		}
-		
+
 		if err != nil {
 			if err == io.EOF {
 				// Flush remaining content

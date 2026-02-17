@@ -49,7 +49,7 @@ func NewMCPServer() (*gomcp.Server, *ServerContext, error) {
 	server := gomcp.NewServer(
 		&gomcp.Implementation{
 			Name:    "hopsule",
-			Version: "0.9.2",
+			Version: "0.9.3",
 		},
 		nil,
 	)
