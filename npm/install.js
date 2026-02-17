@@ -106,27 +106,29 @@ function downloadFile(url) {
       if (timer) clearTimeout(timer);
     };
 
-    const follow = (url, redirects = 0) => {
+    const follow = (currentUrl, redirects = 0) => {
       if (redirects > 10) {
         cleanup();
         return reject(new Error("Too many redirects"));
       }
 
+      if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         reject(new Error(`Download timed out after ${DOWNLOAD_TIMEOUT_MS / 1000}s`));
       }, DOWNLOAD_TIMEOUT_MS);
 
       const req = https
-        .get(url, { headers: { "User-Agent": "hopsule-npm-installer" } }, (res) => {
+        .get(currentUrl, { timeout: 30000, headers: { "User-Agent": "hopsule-npm-installer" } }, (res) => {
           if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-            clearTimeout(timer);
+            res.resume();
             return follow(res.headers.location, redirects + 1);
           }
 
           if (res.statusCode !== 200) {
+            res.resume();
             cleanup();
             return reject(
-              new Error(`Download failed: HTTP ${res.statusCode} from ${url}`)
+              new Error(`Download failed: HTTP ${res.statusCode} from ${currentUrl}`)
             );
           }
 
@@ -190,7 +192,7 @@ function downloadFile(url) {
       req.on("timeout", () => {
         req.destroy();
         cleanup();
-        reject(new Error("Connection timed out"));
+        reject(new Error(`Connection timed out (attempt to ${currentUrl.substring(0, 60)}...)`));
       });
     };
 

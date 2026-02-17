@@ -25,7 +25,8 @@ type ServerContext struct {
 
 // NewMCPServer creates and configures the MCP server with all tools registered.
 // It reads the project config (.hopsule) and global auth config to bootstrap.
-func NewMCPServer() (*gomcp.Server, *ServerContext, error) {
+// If projectDir is non-empty, it looks for .hopsule in that directory instead of cwd.
+func NewMCPServer(projectDir string) (*gomcp.Server, *ServerContext, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load config: %w", err)
@@ -34,7 +35,12 @@ func NewMCPServer() (*gomcp.Server, *ServerContext, error) {
 		return nil, nil, fmt.Errorf("not authenticated — run 'hopsule login' first")
 	}
 
-	projectCfg, _, err := config.LoadProjectConfig()
+	var projectCfg *config.ProjectConfig
+	if projectDir != "" {
+		projectCfg, _, err = config.LoadProjectConfigFrom(projectDir)
+	} else {
+		projectCfg, _, err = config.LoadProjectConfig()
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("no .hopsule file found — run 'hopsule init' in your project directory first")
 	}
@@ -49,7 +55,7 @@ func NewMCPServer() (*gomcp.Server, *ServerContext, error) {
 	server := gomcp.NewServer(
 		&gomcp.Implementation{
 			Name:    "hopsule",
-			Version: "0.9.6",
+			Version: "0.9.7",
 		},
 		nil,
 	)
@@ -64,8 +70,9 @@ func NewMCPServer() (*gomcp.Server, *ServerContext, error) {
 }
 
 // Run starts the MCP server with stdio transport.
-func Run(ctx context.Context) error {
-	server, _, err := NewMCPServer()
+// projectDir overrides the working directory for .hopsule lookup.
+func Run(ctx context.Context, projectDir string) error {
+	server, _, err := NewMCPServer(projectDir)
 	if err != nil {
 		return err
 	}

@@ -1482,14 +1482,14 @@ func mcpInstallCursor(hopsuleBin string) error {
 	if !ok {
 		servers = make(map[string]interface{})
 	}
-	serverCfg := map[string]interface{}{
-		"command": hopsuleBin,
-		"args":    []string{"mcp", "serve"},
-	}
+	args := []string{"mcp", "serve"}
 	if cwd != "" {
-		serverCfg["cwd"] = cwd
+		args = append(args, "--project-dir", cwd)
 	}
-	servers["hopsule"] = serverCfg
+	servers["hopsule"] = map[string]interface{}{
+		"command": hopsuleBin,
+		"args":    args,
+	}
 	config["mcpServers"] = servers
 
 	data, err := json.MarshalIndent(config, "", "  ")
