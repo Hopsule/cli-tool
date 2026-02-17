@@ -23,10 +23,40 @@ type ServerContext struct {
 	ProjectID string
 }
 
+// resolveProjectID determines the project ID using this priority:
+//  1. Explicit projectID argument (from --project-id flag)
+//  2. HOPSULE_PROJECT_ID environment variable
+//  3. .hopsule file in projectDir (from --project-dir flag)
+//  4. .hopsule file in cwd or parent directories
+func resolveProjectID(projectID, projectDir string) (string, error) {
+	if projectID != "" {
+		return projectID, nil
+	}
+
+	if envID := os.Getenv("HOPSULE_PROJECT_ID"); envID != "" {
+		return envID, nil
+	}
+
+	var projectCfg *config.ProjectConfig
+	var err error
+	if projectDir != "" {
+		projectCfg, _, err = config.LoadProjectConfigFrom(projectDir)
+	} else {
+		projectCfg, _, err = config.LoadProjectConfig()
+	}
+	if err == nil && projectCfg != nil {
+		return projectCfg.Project.ID, nil
+	}
+
+	return "", fmt.Errorf(
+		"project not identified — set HOPSULE_PROJECT_ID env var, " +
+			"use --project-id flag, or run 'hopsule init' in your project directory",
+	)
+}
+
 // NewMCPServer creates and configures the MCP server with all tools registered.
-// It reads the project config (.hopsule) and global auth config to bootstrap.
-// If projectDir is non-empty, it looks for .hopsule in that directory instead of cwd.
-func NewMCPServer(projectDir string) (*gomcp.Server, *ServerContext, error) {
+// It resolves the project via env var, flag, or .hopsule file.
+func NewMCPServer(projectID, projectDir string) (*gomcp.Server, *ServerContext, error) {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load config: %w", err)
@@ -35,27 +65,22 @@ func NewMCPServer(projectDir string) (*gomcp.Server, *ServerContext, error) {
 		return nil, nil, fmt.Errorf("not authenticated — run 'hopsule login' first")
 	}
 
-	var projectCfg *config.ProjectConfig
-	if projectDir != "" {
-		projectCfg, _, err = config.LoadProjectConfigFrom(projectDir)
-	} else {
-		projectCfg, _, err = config.LoadProjectConfig()
-	}
+	pid, err := resolveProjectID(projectID, projectDir)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no .hopsule file found — run 'hopsule init' in your project directory first")
+		return nil, nil, err
 	}
 
 	client := api.NewClient(cfg)
 
 	sctx := &ServerContext{
 		Client:    client,
-		ProjectID: projectCfg.Project.ID,
+		ProjectID: pid,
 	}
 
 	server := gomcp.NewServer(
 		&gomcp.Implementation{
 			Name:    "hopsule",
-			Version: "0.9.7",
+			Version: "0.9.8",
 		},
 		nil,
 	)
@@ -70,9 +95,8 @@ func NewMCPServer(projectDir string) (*gomcp.Server, *ServerContext, error) {
 }
 
 // Run starts the MCP server with stdio transport.
-// projectDir overrides the working directory for .hopsule lookup.
-func Run(ctx context.Context, projectDir string) error {
-	server, _, err := NewMCPServer(projectDir)
+func Run(ctx context.Context, projectID, projectDir string) error {
+	server, _, err := NewMCPServer(projectID, projectDir)
 	if err != nil {
 		return err
 	}

@@ -651,7 +651,7 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					m.errorMsg = "Could not find hopsule binary"
 					return m, nil
 				}
-				if err := mcpInstallForIDE(ide.key, hopsuleBin); err != nil {
+				if err := mcpInstallForIDE(ide.key, hopsuleBin, m.currentProj.ID); err != nil {
 					m.errorMsg = "Install failed: " + err.Error()
 					return m, nil
 				}
@@ -1450,56 +1450,53 @@ func findHopsuleBinaryPath() (string, error) {
 	return "", fmt.Errorf("hopsule binary not found")
 }
 
-func mcpInstallForIDE(ide, hopsuleBin string) error {
+func mcpInstallForIDE(ide, hopsuleBin, projectID string) error {
 	switch ide {
 	case "cursor":
-		return mcpInstallCursor(hopsuleBin)
+		return mcpInstallCursor(hopsuleBin, projectID)
 	case "claude-desktop":
-		return mcpInstallClaudeDesktop(hopsuleBin)
+		return mcpInstallClaudeDesktop(hopsuleBin, projectID)
 	case "claude-code":
-		return mcpInstallClaudeCode(hopsuleBin)
+		return mcpInstallClaudeCode(hopsuleBin, projectID)
 	}
 	return fmt.Errorf("unsupported IDE: %s", ide)
 }
 
-func mcpInstallCursor(hopsuleBin string) error {
+func mcpInstallCursor(hopsuleBin, projectID string) error {
 	configDir := ".cursor"
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return err
 	}
 	configPath := filepath.Join(configDir, "mcp.json")
 
-	cwd, _ := os.Getwd()
-
-	var config map[string]interface{}
+	var mcpCfg map[string]interface{}
 	if data, err := os.ReadFile(configPath); err == nil {
-		json.Unmarshal(data, &config)
+		json.Unmarshal(data, &mcpCfg)
 	}
-	if config == nil {
-		config = make(map[string]interface{})
+	if mcpCfg == nil {
+		mcpCfg = make(map[string]interface{})
 	}
-	servers, ok := config["mcpServers"].(map[string]interface{})
+	servers, ok := mcpCfg["mcpServers"].(map[string]interface{})
 	if !ok {
 		servers = make(map[string]interface{})
 	}
-	args := []string{"mcp", "serve"}
-	if cwd != "" {
-		args = append(args, "--project-dir", cwd)
-	}
 	servers["hopsule"] = map[string]interface{}{
 		"command": hopsuleBin,
-		"args":    args,
+		"args":    []string{"mcp", "serve"},
+		"env": map[string]string{
+			"HOPSULE_PROJECT_ID": projectID,
+		},
 	}
-	config["mcpServers"] = servers
+	mcpCfg["mcpServers"] = servers
 
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.MarshalIndent(mcpCfg, "", "  ")
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(configPath, data, 0644)
 }
 
-func mcpInstallClaudeDesktop(hopsuleBin string) error {
+func mcpInstallClaudeDesktop(hopsuleBin, projectID string) error {
 	configDir := claudeDesktopConfigDir()
 	if configDir == "" {
 		return fmt.Errorf("unsupported OS")
@@ -1509,35 +1506,40 @@ func mcpInstallClaudeDesktop(hopsuleBin string) error {
 	}
 	configPath := filepath.Join(configDir, "claude_desktop_config.json")
 
-	var config map[string]interface{}
+	var mcpCfg map[string]interface{}
 	if data, err := os.ReadFile(configPath); err == nil {
-		json.Unmarshal(data, &config)
+		json.Unmarshal(data, &mcpCfg)
 	}
-	if config == nil {
-		config = make(map[string]interface{})
+	if mcpCfg == nil {
+		mcpCfg = make(map[string]interface{})
 	}
-	servers, ok := config["mcpServers"].(map[string]interface{})
+	servers, ok := mcpCfg["mcpServers"].(map[string]interface{})
 	if !ok {
 		servers = make(map[string]interface{})
 	}
 	servers["hopsule"] = map[string]interface{}{
 		"command": hopsuleBin,
 		"args":    []string{"mcp", "serve"},
+		"env": map[string]string{
+			"HOPSULE_PROJECT_ID": projectID,
+		},
 	}
-	config["mcpServers"] = servers
+	mcpCfg["mcpServers"] = servers
 
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.MarshalIndent(mcpCfg, "", "  ")
 	if err != nil {
 		return err
 	}
 	return os.WriteFile(configPath, data, 0644)
 }
 
-func mcpInstallClaudeCode(hopsuleBin string) error {
+func mcpInstallClaudeCode(hopsuleBin, projectID string) error {
 	claudePath, err := exec.LookPath("claude")
 	if err != nil {
 		return fmt.Errorf("'claude' command not found")
 	}
-	cmd := exec.Command(claudePath, "mcp", "add", "hopsule", "--", hopsuleBin, "mcp", "serve")
+	cmd := exec.Command(claudePath, "mcp", "add", "hopsule",
+		"-e", fmt.Sprintf("HOPSULE_PROJECT_ID=%s", projectID),
+		"--", hopsuleBin, "mcp", "serve")
 	return cmd.Run()
 }

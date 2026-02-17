@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/Hopsule/cli-tool/internal/config"
 	mcpserver "github.com/Hopsule/cli-tool/internal/mcp"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,7 @@ Available subcommands:
 // ============================================================================
 
 func newMCPServeCommand() *cobra.Command {
+	var projectID string
 	var projectDir string
 
 	cmd := &cobra.Command{
@@ -52,20 +54,22 @@ This command is typically invoked by AI tools (Cursor, Claude Desktop, etc.)
 rather than run manually. It communicates via stdin/stdout using the
 Model Context Protocol.
 
-The server automatically detects the current project by searching for
-a .hopsule file in the current directory or parent directories.
-Use --project-dir to explicitly set the project directory.
+Project identification (in priority order):
+  1. --project-id flag (direct project UUID)
+  2. HOPSULE_PROJECT_ID environment variable
+  3. --project-dir flag (directory containing .hopsule)
+  4. .hopsule file in current directory or parents
 
 Prerequisites:
-  - Run 'hopsule login' first
-  - Run 'hopsule init' in your project directory`,
+  - Run 'hopsule login' first`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			return mcpserver.Run(ctx, projectDir)
+			return mcpserver.Run(ctx, projectID, projectDir)
 		},
 		SilenceUsage: true,
 	}
 
+	cmd.Flags().StringVar(&projectID, "project-id", "", "Project ID (UUID) to serve")
 	cmd.Flags().StringVar(&projectDir, "project-dir", "", "Project directory containing .hopsule file")
 
 	return cmd
@@ -186,7 +190,20 @@ func installForIDE(ide, hopsuleBin string) error {
 // Cursor
 // ============================================================================
 
+func getProjectIDForMCP() (string, error) {
+	projectCfg, _, err := config.LoadProjectConfig()
+	if err != nil {
+		return "", fmt.Errorf("no .hopsule file found — run 'hopsule init' first")
+	}
+	return projectCfg.Project.ID, nil
+}
+
 func installForCursor(hopsuleBin string) error {
+	projectID, err := getProjectIDForMCP()
+	if err != nil {
+		return err
+	}
+
 	configDir := ".cursor"
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create .cursor directory: %w", err)
@@ -194,31 +211,30 @@ func installForCursor(hopsuleBin string) error {
 
 	configPath := filepath.Join(configDir, "mcp.json")
 
-	var config map[string]interface{}
+	var mcpConfig map[string]interface{}
 	if data, err := os.ReadFile(configPath); err == nil {
-		json.Unmarshal(data, &config)
+		json.Unmarshal(data, &mcpConfig)
 	}
-	if config == nil {
-		config = make(map[string]interface{})
+	if mcpConfig == nil {
+		mcpConfig = make(map[string]interface{})
 	}
 
-	servers, ok := config["mcpServers"].(map[string]interface{})
+	servers, ok := mcpConfig["mcpServers"].(map[string]interface{})
 	if !ok {
 		servers = make(map[string]interface{})
 	}
 
-	args := []string{"mcp", "serve"}
-	if cwd, err := os.Getwd(); err == nil && cwd != "" {
-		args = append(args, "--project-dir", cwd)
-	}
 	servers["hopsule"] = map[string]interface{}{
 		"command": hopsuleBin,
-		"args":    args,
+		"args":    []string{"mcp", "serve"},
+		"env": map[string]string{
+			"HOPSULE_PROJECT_ID": projectID,
+		},
 	}
 
-	config["mcpServers"] = servers
+	mcpConfig["mcpServers"] = servers
 
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.MarshalIndent(mcpConfig, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
@@ -244,6 +260,11 @@ func getClaudeDesktopConfigDir() string {
 }
 
 func installForClaudeDesktop(hopsuleBin string) error {
+	projectID, err := getProjectIDForMCP()
+	if err != nil {
+		return err
+	}
+
 	configDir := getClaudeDesktopConfigDir()
 	if configDir == "" {
 		return fmt.Errorf("unsupported OS for Claude Desktop: %s", runtime.GOOS)
@@ -268,13 +289,12 @@ func installForClaudeDesktop(hopsuleBin string) error {
 		servers = make(map[string]interface{})
 	}
 
-	claudeArgs := []string{"mcp", "serve"}
-	if cwd, err := os.Getwd(); err == nil && cwd != "" {
-		claudeArgs = append(claudeArgs, "--project-dir", cwd)
-	}
 	servers["hopsule"] = map[string]interface{}{
 		"command": hopsuleBin,
-		"args":    claudeArgs,
+		"args":    []string{"mcp", "serve"},
+		"env": map[string]string{
+			"HOPSULE_PROJECT_ID": projectID,
+		},
 	}
 
 	config["mcpServers"] = servers
@@ -292,16 +312,19 @@ func installForClaudeDesktop(hopsuleBin string) error {
 // ============================================================================
 
 func installForClaudeCode(hopsuleBin string) error {
+	projectID, err := getProjectIDForMCP()
+	if err != nil {
+		return err
+	}
+
 	claudePath, err := exec.LookPath("claude")
 	if err != nil {
 		return fmt.Errorf("'claude' command not found — install Claude Code CLI first")
 	}
 
-	codeArgs := []string{"mcp", "add", "hopsule", "--", hopsuleBin, "mcp", "serve"}
-	if cwd, err := os.Getwd(); err == nil && cwd != "" {
-		codeArgs = append(codeArgs, "--project-dir", cwd)
-	}
-	cmd := exec.Command(claudePath, codeArgs...)
+	cmd := exec.Command(claudePath, "mcp", "add", "hopsule",
+		"-e", fmt.Sprintf("HOPSULE_PROJECT_ID=%s", projectID),
+		"--", hopsuleBin, "mcp", "serve")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
