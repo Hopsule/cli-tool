@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Cagangedik/cli-tool/internal/config"
@@ -146,9 +147,13 @@ func (c *Client) CreateDecision(projectID string, req CreateDecisionRequest) (*D
 }
 
 // AcceptDecision accepts a decision (moves from DRAFT/PENDING to ACCEPTED)
-func (c *Client) AcceptDecision(projectID, decisionID string) (*Decision, error) {
+func (c *Client) AcceptDecision(projectID, decisionID, acceptedBy string) (*Decision, error) {
+	if acceptedBy == "" {
+		acceptedBy = "CLI User"
+	}
 	req := AcceptDecisionRequest{
-		ID: decisionID,
+		ID:         decisionID,
+		AcceptedBy: acceptedBy,
 	}
 	resp, err := c.doRequest("POST", "/decisions/accept", req, projectID)
 	if err != nil {
@@ -236,8 +241,8 @@ type CreateDecisionRequest struct {
 
 type AcceptDecisionRequest struct {
 	ID             string `json:"id"`
-	AcceptedBy     string `json:"accepted_by,omitempty"`
-	AcceptanceNote string `json:"acceptance_note,omitempty"`
+	AcceptedBy     string `json:"accepted_by"`
+	AcceptanceNote string `json:"acceptance_note"`
 }
 
 type DeprecateDecisionRequest struct {
@@ -809,33 +814,63 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 		return fmt.Errorf("chat API error: %d - %s", resp.StatusCode, string(body))
 	}
 
-	// Read streaming response
-	buf := make([]byte, 128)
+	// Read streaming response with larger buffer and accumulator for split markers
+	buf := make([]byte, 4096)
 	inContent := false
+	var pending string
 	
 	for {
 		n, err := resp.Body.Read(buf)
 		if n > 0 {
-			chunk := string(buf[:n])
+			pending += string(buf[:n])
 			
 			// Check for content start marker
 			if !inContent {
-				if idx := findIndex(chunk, "__CONTENT_START__"); idx != -1 {
+				if idx := findIndex(pending, "__CONTENT_START__"); idx != -1 {
 					inContent = true
-					chunk = chunk[idx+len("__CONTENT_START__"):]
+					pending = pending[idx+len("__CONTENT_START__"):]
+				} else {
+					// Could be partial marker, keep accumulating
+					if len(pending) > 100 {
+						pending = pending[len(pending)-30:]
+					}
+					if err != nil {
+						break
+					}
+					continue
 				}
 			}
 			
 			if inContent {
-				// Check for usage marker (end of content)
-				if idx := findIndex(chunk, "__USAGE__"); idx != -1 {
-					chunk = chunk[:idx]
+				// Check for usage/end markers
+				endMarkers := []string{"__USAGE__", "__CONTENT_END__", "\"completion_tokens\""}
+				contentEnd := -1
+				for _, marker := range endMarkers {
+					if idx := findIndex(pending, marker); idx != -1 {
+						if contentEnd == -1 || idx < contentEnd {
+							contentEnd = idx
+						}
+					}
 				}
-				
-				// Skip progress markers
-				if !containsMarker(chunk, "__PROGRESS__") && !containsMarker(chunk, "__END_PROGRESS__") {
-					if chunk != "" {
-						onChunk(chunk)
+
+				if contentEnd != -1 {
+					toSend := pending[:contentEnd]
+					// Remove progress markers
+					toSend = removeMarkers(toSend)
+					if toSend != "" {
+						onChunk(toSend)
+					}
+					break
+				}
+
+				// Check for partial markers at the end - keep last 30 chars as pending
+				safeEnd := len(pending) - 30
+				if safeEnd > 0 {
+					toSend := pending[:safeEnd]
+					pending = pending[safeEnd:]
+					toSend = removeMarkers(toSend)
+					if toSend != "" {
+						onChunk(toSend)
 					}
 				}
 			}
@@ -843,6 +878,19 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 		
 		if err != nil {
 			if err == io.EOF {
+				// Flush remaining content
+				if inContent && pending != "" {
+					// Clean any trailing metadata
+					for _, marker := range []string{"__USAGE__", "__CONTENT_END__", "\"completion_tokens\""} {
+						if idx := findIndex(pending, marker); idx != -1 {
+							pending = pending[:idx]
+						}
+					}
+					pending = removeMarkers(pending)
+					if pending != "" {
+						onChunk(pending)
+					}
+				}
 				break
 			}
 			return fmt.Errorf("error reading response: %w", err)
@@ -850,6 +898,15 @@ func (c *Client) SendChatMessage(projectID string, req *ChatRequest, onChunk fun
 	}
 
 	return nil
+}
+
+func removeMarkers(s string) string {
+	result := s
+	markers := []string{"__PROGRESS__", "__END_PROGRESS__"}
+	for _, m := range markers {
+		result = strings.ReplaceAll(result, m, "")
+	}
+	return result
 }
 
 // Helper function to find index of substring
@@ -865,4 +922,129 @@ func findIndex(s, substr string) int {
 // Helper function to check if string contains marker
 func containsMarker(s, marker string) bool {
 	return findIndex(s, marker) != -1
+}
+
+// ============================================================================
+// CHAT HISTORY TYPES & METHODS
+// ============================================================================
+
+// ChatHistoryEntry represents a single chat history item (full)
+type ChatHistoryEntry struct {
+	ID        string        `json:"id"`
+	ProjectID string        `json:"project_id"`
+	UserID    string        `json:"user_id"`
+	Topic     string        `json:"topic"`
+	Messages  []ChatMessage `json:"messages"`
+	CreatedAt string        `json:"created_at"`
+	UpdatedAt string        `json:"updated_at"`
+}
+
+// ChatHistoryListItem is a lightweight version for listing
+type ChatHistoryListItem struct {
+	ID        string `json:"id"`
+	Topic     string `json:"topic"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// ListChatHistoryResponse is the response from GET /chat-history
+type ListChatHistoryResponse struct {
+	ChatHistory []ChatHistoryListItem `json:"chatHistory"`
+	Total       int                   `json:"total"`
+}
+
+// CreateChatHistoryRequest is the request body for creating chat history
+type CreateChatHistoryRequest struct {
+	Topic    string        `json:"topic"`
+	Messages []ChatMessage `json:"messages"`
+}
+
+// UpdateChatHistoryRequest is the request body for updating chat history
+type UpdateChatHistoryRequest struct {
+	Topic    string        `json:"topic,omitempty"`
+	Messages []ChatMessage `json:"messages,omitempty"`
+}
+
+// ListChatHistory retrieves chat history list for the current project
+func (c *Client) ListChatHistory(projectID string, limit int) ([]ChatHistoryListItem, error) {
+	path := fmt.Sprintf("/chat-history?limit=%d", limit)
+	resp, err := c.doRequest("GET", path, nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var result ListChatHistoryResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result.ChatHistory, nil
+}
+
+// GetChatHistory retrieves a single chat history by ID
+func (c *Client) GetChatHistory(projectID, chatID string) (*ChatHistoryEntry, error) {
+	resp, err := c.doRequest("GET", fmt.Sprintf("/chat-history/%s", chatID), nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var entry ChatHistoryEntry
+	if err := json.NewDecoder(resp.Body).Decode(&entry); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &entry, nil
+}
+
+// CreateChatHistory creates a new chat history entry
+func (c *Client) CreateChatHistory(projectID string, req *CreateChatHistoryRequest) (*ChatHistoryEntry, error) {
+	resp, err := c.doRequest("POST", "/chat-history", req, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var entry ChatHistoryEntry
+	if err := json.NewDecoder(resp.Body).Decode(&entry); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &entry, nil
+}
+
+// UpdateChatHistory updates an existing chat history entry
+func (c *Client) UpdateChatHistory(projectID, chatID string, req *UpdateChatHistoryRequest) (*ChatHistoryEntry, error) {
+	resp, err := c.doRequest("PUT", fmt.Sprintf("/chat-history/%s", chatID), req, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var entry ChatHistoryEntry
+	if err := json.NewDecoder(resp.Body).Decode(&entry); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &entry, nil
 }

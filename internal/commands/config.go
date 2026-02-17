@@ -30,7 +30,7 @@ func NewConfigCommand() *cobra.Command {
 				cfg.APIURL = apiURL
 			}
 			if cfg.APIURL == "" {
-				cfg.APIURL = "http://localhost:8080"
+				cfg.APIURL = "https://api.hopsule.com"
 			}
 
 			fmt.Printf("Token [%s]: ", maskToken(cfg.Token))

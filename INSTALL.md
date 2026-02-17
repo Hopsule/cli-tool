@@ -56,7 +56,7 @@ Output:
           hopsule create  (create decision)
           hopsule status  (health check)
 
-        API: http://localhost:8080
+        API: https://api.hopsule.com
         Token: not set
 
         Run 'hopsule --help' for more commands
@@ -69,7 +69,7 @@ hopsule config
 ```
 
 You'll be prompted for:
-- **API URL**: http://localhost:8080 (or your decision-api URL)
+- **API URL**: https://api.hopsule.com (or your decision-api URL)
 - **Project ID**: Your project identifier
 - **Organization**: Your organization name
 - **Auth Token**: Your JWT authentication token
@@ -109,7 +109,7 @@ hopsule --help
 
 ### Manual Configuration
 ```yaml
-api_url: http://localhost:8080
+api_url: https://api.hopsule.com
 project: your-project-id
 organization: your-org-name
 token: your-jwt-token
@@ -117,7 +117,7 @@ token: your-jwt-token
 
 ### Environment Variables
 ```bash
-export DECISION_API_URL=http://localhost:8080
+export DECISION_API_URL=https://api.hopsule.com
 export DECISION_PROJECT=your-project-id
 export DECISION_TOKEN=your-jwt-token
 ```
@@ -167,10 +167,10 @@ exec zsh
 ### Connection issues
 ```bash
 # Check if decision-api is running
-curl http://localhost:8080/health
+curl https://api.hopsule.com/health
 
 # Test with explicit flags
-hopsule list --api-url http://localhost:8080 --project <id> --token <token>
+hopsule list --api-url https://api.hopsule.com --project <id> --token <token>
 ```
 
 ### Reset configuration

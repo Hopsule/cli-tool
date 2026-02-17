@@ -166,6 +166,80 @@ func buildKanbanColumn(title string, decisions []api.Decision) string {
 	return kanbanBoxStyle.Width(25).Render(sb.String())
 }
 
+// TaskKanban displays tasks grouped by status (TODO, IN_PROGRESS, DONE)
+func TaskKanban(tasks []*api.Task, maxPerColumn int) string {
+	// Group by status
+	groups := map[string][]*api.Task{
+		"TODO":        {},
+		"IN_PROGRESS": {},
+		"DONE":        {},
+	}
+
+	for _, t := range tasks {
+		status := t.Status
+		if status == "REVIEW" {
+			status = "IN_PROGRESS" // Merge REVIEW into IN_PROGRESS
+		}
+		if _, ok := groups[status]; ok {
+			groups[status] = append(groups[status], t)
+		}
+	}
+
+	// Build columns
+	columnOrder := []string{"TODO", "IN_PROGRESS", "DONE"}
+	columns := []string{}
+
+	for _, status := range columnOrder {
+		items := groups[status]
+		col := buildTaskKanbanColumn(status, items, maxPerColumn)
+		columns = append(columns, col)
+	}
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
+}
+
+func buildTaskKanbanColumn(title string, tasks []*api.Task, maxShow int) string {
+	var sb strings.Builder
+
+	// Display title mapping
+	displayTitle := title
+	switch title {
+	case "TODO":
+		displayTitle = "To Do"
+	case "IN_PROGRESS":
+		displayTitle = "In Progress"
+	case "DONE":
+		displayTitle = "Done"
+	}
+
+	// Header with count
+	header := fmt.Sprintf("%s (%d)", displayTitle, len(tasks))
+	sb.WriteString(kanbanHeaderStyle.Render(header))
+	sb.WriteString("\n")
+
+	if len(tasks) == 0 {
+		sb.WriteString(kanbanDimStyle.Render("  (empty)"))
+		sb.WriteString("\n")
+	} else {
+		showCount := len(tasks)
+		if maxShow > 0 && showCount > maxShow {
+			showCount = maxShow
+		}
+		for i := 0; i < showCount; i++ {
+			t := tasks[i]
+			title := truncateStr(t.Title, 16)
+			sb.WriteString(kanbanItemStyle.Render("• " + title))
+			sb.WriteString("\n")
+		}
+		if len(tasks) > maxShow && maxShow > 0 {
+			sb.WriteString(kanbanDimStyle.Render(fmt.Sprintf("  +%d more", len(tasks)-maxShow)))
+			sb.WriteString("\n")
+		}
+	}
+
+	return kanbanBoxStyle.Width(20).Render(sb.String())
+}
+
 // StatusBoard shows a quick status overview
 func StatusBoard(stats *api.ProjectStatus) string {
 	var sb strings.Builder

@@ -49,8 +49,8 @@ func LoadConfig() (*Config, error) {
 	viper.BindEnv("project", "DECISION_PROJECT")
 
 	// Defaults
-	viper.SetDefault("api_url", "http://localhost:8080")
-	viper.SetDefault("web_url", "http://localhost:3000")
+	viper.SetDefault("api_url", "https://api.hopsule.com")
+	viper.SetDefault("web_url", "https://app.hopsule.com")
 
 	// Read config file (optional - file may not exist)
 	if err := viper.ReadInConfig(); err != nil {
@@ -130,7 +130,7 @@ func (c *Config) GetWebURL() string {
 	if c.WebURL != "" {
 		return c.WebURL
 	}
-	return "http://localhost:3000"
+	return "https://app.hopsule.com"
 }
 
 // GetAPIURL returns the API URL with fallback to default
@@ -138,5 +138,5 @@ func (c *Config) GetAPIURL() string {
 	if c.APIURL != "" {
 		return c.APIURL
 	}
-	return "http://localhost:8080"
+	return "https://api.hopsule.com"
 }

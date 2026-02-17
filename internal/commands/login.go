@@ -58,7 +58,7 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		cfg.APIURL = apiURL
 	}
 	if cfg.APIURL == "" {
-		cfg.APIURL = "http://localhost:8080"
+		cfg.APIURL = "https://api.hopsule.com"
 	}
 
 	webURL, _ := cmd.Flags().GetString("web-url")
@@ -66,7 +66,7 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		cfg.WebURL = webURL
 	}
 	if cfg.WebURL == "" {
-		cfg.WebURL = "http://localhost:3000"
+		cfg.WebURL = "https://app.hopsule.com"
 	}
 
 	noBrowser, _ := cmd.Flags().GetBool("no-browser")

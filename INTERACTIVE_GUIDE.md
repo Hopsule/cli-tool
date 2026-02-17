@@ -50,7 +50,7 @@ hopsule
           hopsule status         (Show project status)
           hopsule sync           (Sync with decision-api)
 
-        API: http://localhost:8080
+        API: https://api.hopsule.com
         Token: configured ✓
 
         ↑/↓: navigate  •  Enter: execute  •  q: quit  •  ?: help
@@ -89,7 +89,7 @@ hopsule
 # 3. Press Enter to execute
 
 # You'll be prompted for:
-# - API URL (e.g., http://localhost:8080)
+# - API URL (e.g., https://api.hopsule.com)
 # - Project ID
 # - Organization name
 # - Auth token

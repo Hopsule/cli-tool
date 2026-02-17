@@ -126,7 +126,7 @@ hopsule config
 ```
 
 You'll be prompted for:
-- **API URL**: The decision-api endpoint (default: `http://localhost:8080`)
+- **API URL**: The decision-api endpoint (default: `https://api.hopsule.com`)
 - **Token**: Your JWT authentication token
 - **Default Project ID**: Your project identifier
 
@@ -155,7 +155,7 @@ hopsule config
 ```
 
 **What it does:**
-- Prompts for API URL (with default: `http://localhost:8080`)
+- Prompts for API URL (with default: `https://api.hopsule.com`)
 - Prompts for authentication token (masks existing token)
 - Prompts for default project ID
 - Saves configuration to `~/.decision-cli/config.yaml`
@@ -202,7 +202,7 @@ List all decisions for the current project.
 ```bash
 hopsule list
 hopsule list --project my-project-id
-hopsule list --api-url http://localhost:8080 --token your-token
+hopsule list --api-url https://api.hopsule.com --token your-token
 ```
 
 **Output:**
@@ -389,7 +389,7 @@ The CLI stores configuration in:
 ### Config File Structure
 
 ```yaml
-api_url: http://localhost:8080
+api_url: https://api.hopsule.com
 project: your-project-id
 organization: your-org-name
 token: your-jwt-token
@@ -400,7 +400,7 @@ token: your-jwt-token
 You can also configure via environment variables (takes precedence over config file):
 
 ```bash
-export DECISION_API_URL=http://localhost:8080
+export DECISION_API_URL=https://api.hopsule.com
 export DECISION_PROJECT=your-project-id
 export DECISION_TOKEN=your-jwt-token
 ```
@@ -415,7 +415,7 @@ export DECISION_TOKEN=your-jwt-token
 1. **Command-line flags** (highest priority)
 2. **Environment variables**
 3. **Config file** (`~/.decision-cli/config.yaml`)
-4. **Defaults** (API URL defaults to `http://localhost:8080`)
+4. **Defaults** (API URL defaults to `https://api.hopsule.com`)
 
 ### Manual Configuration
 
@@ -424,7 +424,7 @@ You can manually create/edit the config file:
 ```bash
 mkdir -p ~/.decision-cli
 cat > ~/.decision-cli/config.yaml << EOF
-api_url: http://localhost:8080
+api_url: https://api.hopsule.com
 project: my-project-id
 token: your-jwt-token-here
 EOF
@@ -569,12 +569,12 @@ exec zsh
 
 **Check if decision-api is running:**
 ```bash
-curl http://localhost:8080/health
+curl https://api.hopsule.com/health
 ```
 
 **Test with explicit flags:**
 ```bash
-hopsule list --api-url http://localhost:8080 --project <id> --token <token>
+hopsule list --api-url https://api.hopsule.com --project <id> --token <token>
 ```
 
 **Verify configuration:**

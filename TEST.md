@@ -6,7 +6,7 @@
 - **Version**: dev
 
 ## ✅ API Integration
-- **decision-api**: Running on http://localhost:8080
+- **decision-api**: Running on https://api.hopsule.com
 - **Health Check**: PASS
 - **Endpoints**: Updated to match decision-api structure
 
@@ -33,7 +33,7 @@
 ```bash
 ./decision config
 # Enter:
-# - API URL: http://localhost:8080
+# - API URL: https://api.hopsule.com
 # - Project ID: <your-project-id>
 # - Token: <your-jwt-token>
 ```
@@ -64,7 +64,7 @@
 
 ### With Flags (No Config)
 ```bash
-./decision list --api-url http://localhost:8080 --project <project-id> --token <token>
+./decision list --api-url https://api.hopsule.com --project <project-id> --token <token>
 ```
 
 ## 📊 Test Results
@@ -85,7 +85,7 @@
 ## 🎯 Next Steps
 
 1. **Get Auth Token**: 
-   - Login to web-app (http://localhost:3000)
+   - Login to web-app (https://app.hopsule.com)
    - Open browser DevTools > Network
    - Find JWT token in Authorization header
 

@@ -47,7 +47,11 @@ func NewAcceptCommand() *cobra.Command {
 				WithBaseURL(apiURL).
 				WithToken(token)
 
-			decision, err := client.AcceptDecision(projectID, decisionID)
+			acceptedBy := "CLI User"
+			if cfg.User != nil && cfg.User.Name != "" {
+				acceptedBy = cfg.User.Name
+			}
+			decision, err := client.AcceptDecision(projectID, decisionID, acceptedBy)
 			if err != nil {
 				return fmt.Errorf("failed to accept decision: %w", err)
 			}
