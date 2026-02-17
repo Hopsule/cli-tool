@@ -35,5 +35,8 @@ config.yaml
 
 # Build output
 dist/
-bin/
+/bin/
 decision
+/hopsule
+hopsule-*
+bottle-build-*/

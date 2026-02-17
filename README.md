@@ -9,70 +9,37 @@
 
 **Hopsule CLI** is a powerful command-line tool designed for developers who work with decision-first workflow management. It provides an intuitive interface to interact with the `decision-api`, enabling you to manage decisions, track project status, and maintain organizational memory directly from your terminal.
 
-The CLI features an interactive Terminal User Interface (TUI) built with [Bubble Tea](https://github.com/charmbracelet/bubbletea) (v0.7.5), making it easy to navigate and execute commands without memorizing complex syntax.
+The CLI features an interactive Terminal User Interface (TUI) built with [Bubble Tea](https://github.com/charmbracelet/bubbletea), making it easy to navigate and execute commands without memorizing complex syntax.
 
 ## Features
 
-- 🎨 **Interactive TUI (v0.7.5)** - Beautiful, keyboard-navigable interface with ASCII art logo
-- 📦 **Homebrew Installation** - One-command installation on macOS
-- 🎯 **Decision Management** - Create, list, accept, and deprecate decisions
-- 🔐 **Authentication** - Secure JWT token-based authentication
-- 📊 **Project Status** - View comprehensive project statistics
-- 🔄 **Sync Capabilities** - Synchronize with remote decision-api
-- ⚙️ **Flexible Configuration** - Config file and environment variable support
-- 🎨 **Monochrome Theme** - Works beautifully in both dark and light terminals
-- ⌨️ **Keyboard Navigation** - Arrow keys and vim-style navigation (j/k)
+- **Interactive TUI** - Full-screen, keyboard-navigable interface with organization/project selection
+- **Card & List Views** - Toggle between card grid and paginated datatable with `v`
+- **Hopper AI Chat** - Built-in AI assistant with project context awareness
+- **Decision Management** - Create, list, accept, deprecate decisions with status filters
+- **Memory Management** - Create, edit, delete project memories
+- **Task Management** - List and Kanban views with status toggles
+- **Capsule Browsing** - View and search context packs
+- **Device Auth Login** - Browser-based secure authentication flow
+- **Organization & Project Navigation** - Multi-org, multi-project support
+- **Dynamic Search** - Real-time `/` search across all entity views
+- **Homebrew Installation** - One-command installation on macOS
+- **Flexible Configuration** - Config file, environment variable, and flag support
+- **Adaptive Theme** - Works in both dark and light terminals
 
 ## Installation
 
-### Option 1: Homebrew (Recommended - macOS)
+Install Hopsule CLI using any of the methods below. See [INSTALL.md](INSTALL.md) for the full guide.
 
-```bash
-brew install hopsule/tap/hopsule
-```
+| Method | Command |
+|--------|---------|
+| **npm** | `npm install -g hopsule` |
+| **Homebrew** | `brew install hopsule/tap/hopsule` |
+| **Scoop** (Windows) | `scoop bucket add hopsule https://github.com/Hopsule/scoop-bucket && scoop install hopsule` |
+| **Chocolatey** (Windows) | `choco install hopsule` |
+| **Shell script** | `curl -fsSL https://raw.githubusercontent.com/Hopsule/cli-tool/main/install.sh \| bash` |
 
-This installs the latest stable release from the Hopsule Homebrew tap.
-
-### Option 2: Manual Installation
-
-#### macOS
-
-**Apple Silicon (M1/M2/M3)**
-```bash
-curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-arm64.tar.gz | tar xz
-mv decision-darwin-arm64 /usr/local/bin/hopsule
-chmod +x /usr/local/bin/hopsule
-```
-
-**Intel (x86_64)**
-```bash
-curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-amd64.tar.gz | tar xz
-mv decision-darwin-amd64 /usr/local/bin/hopsule
-chmod +x /usr/local/bin/hopsule
-```
-
-#### Windows
-
-**PowerShell**
-```powershell
-# Download and extract
-Invoke-WebRequest -Uri https://github.com/Hopsule/cli-tool/releases/latest/download/decision-windows-amd64.zip -OutFile hopsule.zip
-Expand-Archive hopsule.zip -DestinationPath .
-Rename-Item decision-windows-amd64.exe hopsule.exe
-
-# Run
-.\hopsule.exe
-```
-
-**Manual Download**
-1. Visit [Releases](https://github.com/Hopsule/cli-tool/releases/latest)
-2. Download `decision-windows-amd64.zip`
-3. Extract and rename `decision-windows-amd64.exe` to `hopsule.exe`
-4. Add to PATH (optional, for global access)
-
-### Verification
-
-After installation, verify it works:
+### Verify
 
 ```bash
 hopsule --version
@@ -112,10 +79,18 @@ This launches the interactive TUI dashboard with a beautiful ASCII logo and comm
 ```
 
 **Keyboard Shortcuts:**
-- `↑/↓` or `k/j` - Navigate commands
-- `Enter` - Execute selected command
-- `q` - Quit
-- `?` - Show help
+- `↑/↓` or `k/j` - Navigate items
+- `←/→` or `h/l` - Navigate grid / change page (list view)
+- `Enter` - Select / open detail
+- `/` - Search within decisions, memories, tasks, capsules
+- `v` - Toggle Card / List view
+- `tab` - Toggle status filter (decisions) / view mode (tasks)
+- `n` - Create new item
+- `e` - Edit selected item
+- `d` - Delete selected item
+- `a` - Accept decision
+- `x` - Deprecate decision
+- `q` / `Esc` - Go back / quit
 
 ### 2. Configure the CLI
 
@@ -141,10 +116,52 @@ Once configured, you can use any of the available commands. See the [Command Ref
 ### Core Commands
 
 #### `hopsule`
-Launch the interactive dashboard (default command when no subcommand is provided).
+Launch the interactive TUI (default command when no subcommand is provided). Provides full organization/project navigation, decision/memory/task/capsule management, and Hopper AI chat.
 
 ```bash
 hopsule
+```
+
+#### `hopsule login`
+Authenticate via browser-based device auth flow. Opens your browser, waits for approval, and stores the token locally.
+
+```bash
+hopsule login
+```
+
+#### `hopsule logout`
+Clear stored authentication credentials.
+
+```bash
+hopsule logout
+```
+
+#### `hopsule whoami`
+Display current authenticated user info.
+
+```bash
+hopsule whoami
+```
+
+#### `hopsule orgs`
+List organizations you belong to.
+
+```bash
+hopsule orgs
+```
+
+#### `hopsule projects`
+List projects in an organization.
+
+```bash
+hopsule projects
+```
+
+#### `hopsule init`
+Link the current directory to a Hopsule project. Creates a local `.hopsule.yaml` project config.
+
+```bash
+hopsule init
 ```
 
 #### `hopsule config`
@@ -152,46 +169,6 @@ Interactively configure CLI settings (API URL, token, default project).
 
 ```bash
 hopsule config
-```
-
-**What it does:**
-- Prompts for API URL (with default: `https://api.hopsule.com`)
-- Prompts for authentication token (masks existing token)
-- Prompts for default project ID
-- Saves configuration to `~/.decision-cli/config.yaml`
-
-#### `hopsule init`
-Alias for `hopsule config` - creates initial configuration file.
-
-```bash
-hopsule init
-```
-
-#### `hopsule login`
-Authenticate with decision-api (configure your JWT token).
-
-**Note:** Currently maps to `config` command. Future versions will include dedicated authentication flow.
-
-```bash
-hopsule login
-```
-
-#### `hopsule connect`
-Link repository to a project.
-
-**Note:** Planned feature for repository linking.
-
-```bash
-hopsule connect
-```
-
-#### `hopsule dev`
-Start interactive development mode (TUI).
-
-**Note:** Currently launches the same interactive dashboard as `hopsule`.
-
-```bash
-hopsule dev
 ```
 
 ### Decision Management Commands
@@ -439,8 +416,8 @@ EOF
 ### Supported Platforms
 
 - ✅ **macOS 11+** (Apple Silicon M1/M2/M3, Intel x86_64)
+- ✅ **Linux** (AMD64, ARM64)
 - ✅ **Windows 10/11** (AMD64, ARM64)
-- ⏳ **Linux** (coming soon)
 
 ## Architecture
 
@@ -484,7 +461,7 @@ git clone https://github.com/Hopsule/cli-tool.git
 cd cli-tool
 
 # Build the binary
-go build -o hopsule ./cmd/decision
+go build -o hopsule .
 
 # Run it
 ./hopsule
@@ -500,42 +477,38 @@ go mod download
 go test ./...
 
 # Build for your platform
-go build -o hopsule ./cmd/decision
+go build -o hopsule .
 
 # Build for multiple platforms
-GOOS=linux GOARCH=amd64 go build -o hopsule-linux-amd64 ./cmd/decision
-GOOS=darwin GOARCH=arm64 go build -o hopsule-darwin-arm64 ./cmd/decision
-GOOS=windows GOARCH=amd64 go build -o hopsule-windows-amd64.exe ./cmd/decision
+GOOS=linux GOARCH=amd64 go build -o hopsule-linux-amd64 .
+GOOS=darwin GOARCH=arm64 go build -o hopsule-darwin-arm64 .
+GOOS=windows GOARCH=amd64 go build -o hopsule-windows-amd64.exe .
 ```
 
 ### Project Structure
 
 ```
 cli-tool/
-├── cmd/
-│   └── decision/
-│       └── main.go          # Entry point, Cobra root command
+├── main.go                        # Entry point, Cobra root command + interactive TUI launcher
 ├── internal/
 │   ├── api/
-│   │   └── client.go        # HTTP client for decision-api
-│   ├── commands/
-│   │   ├── accept.go        # Accept decision command
-│   │   ├── config.go        # Configuration command
-│   │   ├── create.go        # Create decision command
-│   │   ├── deprecate.go     # Deprecate decision command
-│   │   ├── get.go           # Get decision command
-│   │   ├── list.go          # List decisions command
-│   │   ├── status.go        # Status command
-│   │   └── sync.go          # Sync command
-│   ├── config/
-│   │   └── config.go        # Configuration management
-│   └── ui/
-│       ├── dashboard.go     # Dashboard UI (future)
-│       └── interactive.go   # Interactive TUI (Bubble Tea)
-├── go.mod                    # Go module definition
-├── go.sum                    # Go module checksums
-├── .goreleaser.yml          # Release configuration
-└── README.md                 # This file
+│   │   └── client.go              # HTTP client for decision-api
+│   ├── commands/                   # All CLI subcommands (login, list, create, etc.)
+│   ├── config/                     # Configuration management
+│   └── ui/                         # Bubble Tea TUI (styles, model, views, cards, list, etc.)
+├── npm/                            # npm package (postinstall binary downloader)
+│   ├── package.json
+│   ├── install.js
+│   └── bin/                        # Shell/CMD wrappers
+├── choco/                          # Chocolatey package
+│   ├── hopsule.nuspec
+│   └── tools/                      # Install/uninstall scripts
+├── .github/workflows/              # CI/CD (ci.yml, release.yml)
+├── .goreleaser.yml                 # GoReleaser config (Homebrew + Scoop + binaries)
+├── install.sh                      # Universal curl installer
+├── LICENSE                         # MIT License
+├── INSTALL.md                      # Comprehensive installation guide
+└── README.md                       # This file
 ```
 
 ### Dependencies
@@ -543,8 +516,9 @@ cli-tool/
 Key dependencies:
 - **[Cobra](https://github.com/spf13/cobra)** - CLI framework
 - **[Viper](https://github.com/spf13/viper)** - Configuration management
-- **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** - TUI framework (v0.7.5)
+- **[Bubble Tea](https://github.com/charmbracelet/bubbletea)** - TUI framework
 - **[Lipgloss](https://github.com/charmbracelet/lipgloss)** - Terminal styling
+- **[color](https://github.com/fatih/color)** - ANSI color output
 
 ## Troubleshooting
 
@@ -605,7 +579,9 @@ hopsule config
 
 ## Release History
 
-- **v0.7.5** - Current stable release with interactive TUI
+- **v0.9.0** - Production distribution: npm, Homebrew, Scoop, Chocolatey, curl installer, CI/CD, Windows/Linux support
+- **v0.8.0** - Card/List toggle, paginated datatable, Hopper AI chat, modular UI refactor
+- **v0.7.5** - Interactive TUI with org/project navigation, device auth login
 - **v0.4.0** - Minimal dashboard design
 - **v0.3.0** - Monochrome theme + ASCII logo
 - **v0.2.1** - Panic fix (lipgloss.Width)

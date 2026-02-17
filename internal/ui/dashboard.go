@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Cagangedik/cli-tool/internal/config"
+	"github.com/Hopsule/cli-tool/internal/config"
 	"github.com/fatih/color"
 )
 

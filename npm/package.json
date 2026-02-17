@@ -1,0 +1,48 @@
+{
+  "name": "hopsule",
+  "version": "0.9.0",
+  "description": "Decision-first, context-aware, portable memory system CLI",
+  "keywords": [
+    "cli",
+    "decisions",
+    "architecture",
+    "memory",
+    "context",
+    "governance",
+    "hopsule"
+  ],
+  "homepage": "https://hopsule.com",
+  "bugs": {
+    "url": "https://github.com/Hopsule/cli-tool/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hopsule/cli-tool.git"
+  },
+  "license": "MIT",
+  "author": "Hopsule <hello@hopsule.com>",
+  "bin": {
+    "hopsule": "./bin/hopsule"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

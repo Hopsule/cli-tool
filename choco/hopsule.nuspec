@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>hopsule</id>
+    <version>0.9.0</version>
+    <title>Hopsule CLI</title>
+    <authors>Hopsule</authors>
+    <owners>Hopsule</owners>
+    <projectUrl>https://hopsule.com</projectUrl>
+    <projectSourceUrl>https://github.com/Hopsule/cli-tool</projectSourceUrl>
+    <bugTrackerUrl>https://github.com/Hopsule/cli-tool/issues</bugTrackerUrl>
+    <licenseUrl>https://github.com/Hopsule/cli-tool/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>Decision-first, context-aware, portable memory system CLI</summary>
+    <description>
+Hopsule CLI is a command-line tool for decision-first project memory management.
+
+Track architectural decisions, preserve project context, and share knowledge across teams and AI agents.
+
+Features:
+- Interactive TUI dashboard with card and list views
+- Decision lifecycle management (Draft, Pending, Accepted, Deprecated)
+- Memory preservation and search
+- Context Pack creation and sharing
+- Hopper AI chat assistant
+- Device authentication
+- Organization and project management
+    </description>
+    <tags>cli decisions architecture memory context governance devtools</tags>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

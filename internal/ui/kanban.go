@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Cagangedik/cli-tool/internal/api"
+	"github.com/Hopsule/cli-tool/internal/api"
 	"github.com/charmbracelet/lipgloss"
 )
 

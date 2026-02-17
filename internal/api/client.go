@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Cagangedik/cli-tool/internal/config"
+	"github.com/Hopsule/cli-tool/internal/config"
 )
 
 type Client struct {

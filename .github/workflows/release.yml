@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # 1. Test before releasing
+  # ──────────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+      - name: Go vet
+        run: go vet ./...
+
+  # ──────────────────────────────────────────────────────────────────
+  # 2. GoReleaser: build binaries, create GitHub release, push
+  #    Homebrew formula and Scoop manifest
+  # ──────────────────────────────────────────────────────────────────
+  goreleaser:
+    name: GoReleaser
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────────────────────────
+  # 3. Publish npm package
+  # ──────────────────────────────────────────────────────────────────
+  npm-publish:
+    name: npm Publish
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Sync version from tag
+        working-directory: npm
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Copy LICENSE
+        run: cp LICENSE npm/LICENSE
+
+      - name: Publish to npm
+        working-directory: npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ──────────────────────────────────────────────────────────────────
+  # 4. Push Chocolatey package
+  # ──────────────────────────────────────────────────────────────────
+  chocolatey:
+    name: Chocolatey
+    needs: goreleaser
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync version from tag
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          (Get-Content choco/hopsule.nuspec) -replace '<version>.*</version>', "<version>$version</version>" | Set-Content choco/hopsule.nuspec
+          (Get-Content choco/tools/chocolateyInstall.ps1) -replace "\`$version = '.*'", "`$version = '$version'" | Set-Content choco/tools/chocolateyInstall.ps1
+
+      - name: Download checksums
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $checksumUrl = "https://github.com/Hopsule/cli-tool/releases/download/v${version}/checksums.txt"
+          $checksums = Invoke-WebRequest -Uri $checksumUrl -UseBasicParsing
+          $amd64Line = ($checksums.Content -split "`n") | Where-Object { $_ -match "hopsule-windows-amd64.zip" }
+          $checksum = ($amd64Line -split '\s+')[0]
+          (Get-Content choco/tools/chocolateyInstall.ps1) -replace "\`$checksum = ''", "`$checksum = '$checksum'" | Set-Content choco/tools/chocolateyInstall.ps1
+
+      - name: Pack and push
+        shell: pwsh
+        run: |
+          cd choco
+          choco pack
+          choco push --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCO_API_KEY }}

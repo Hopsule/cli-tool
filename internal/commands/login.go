@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Cagangedik/cli-tool/internal/api"
-	"github.com/Cagangedik/cli-tool/internal/config"
+	"github.com/Hopsule/cli-tool/internal/api"
+	"github.com/Hopsule/cli-tool/internal/config"
 	"github.com/spf13/cobra"
 )
 

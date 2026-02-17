@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Cagangedik/cli-tool/internal/commands"
-	"github.com/Cagangedik/cli-tool/internal/config"
-	"github.com/Cagangedik/cli-tool/internal/ui"
+	"github.com/Hopsule/cli-tool/internal/commands"
+	"github.com/Hopsule/cli-tool/internal/config"
+	"github.com/Hopsule/cli-tool/internal/ui"
 	"github.com/spf13/cobra"
 )
 
 // Version information (set by goreleaser)
 var (
-	version = "0.7.1"
+	version = "0.9.0"
 	commit  = "none"
 	date    = "unknown"
 )

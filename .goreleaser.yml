@@ -7,14 +7,15 @@ before:
     - go mod tidy
 
 builds:
-  - id: decision
-    binary: decision
-    main: ./cmd/decision
+  - id: hopsule
+    binary: hopsule
+    main: .
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
@@ -25,14 +26,27 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - id: decision
+  - id: hopsule
     builds:
-      - decision
+      - hopsule
     format: tar.gz
-    name_template: "decision-{{ .Os }}-{{ .Arch }}"
+    name_template: "hopsule-{{ .Os }}-{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
 
 checksum:
   name_template: "checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
 
 brews:
   - repository:
@@ -40,13 +54,22 @@ brews:
       name: homebrew-tap
       token: "{{ .Env.GITHUB_TOKEN }}"
     directory: Formula
-    homepage: https://github.com/Hopsule/cli-tool
-    description: "Decision-first workflow management CLI"
+    homepage: https://hopsule.com
+    description: "Decision-first, context-aware, portable memory system CLI"
     license: MIT
     install: |
-      bin.install "decision" => "hopsule"
+      bin.install "hopsule"
     test: |
       system "#{bin}/hopsule", "--version"
+
+scoops:
+  - repository:
+      owner: Hopsule
+      name: scoop-bucket
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    homepage: https://hopsule.com
+    description: "Decision-first, context-aware, portable memory system CLI"
+    license: MIT
 
 release:
   github:
@@ -55,3 +78,5 @@ release:
   draft: false
   prerelease: false
   name_template: "v{{.Version}}"
+  extra_files:
+    - glob: ./npm/package.json

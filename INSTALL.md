@@ -1,179 +1,248 @@
-# Hopsule CLI Installation Guide
+# Hopsule CLI — Installation Guide
 
-## 📦 Installation
+## Quick Install
 
-### Option 1: Homebrew (Recommended - macOS/Linux)
+Pick your preferred method:
+
+| Method | Platform | Command |
+|--------|----------|---------|
+| **npm** | All | `npm install -g hopsule` |
+| **Homebrew** | macOS / Linux | `brew install hopsule/tap/hopsule` |
+| **Scoop** | Windows | `scoop bucket add hopsule https://github.com/Hopsule/scoop-bucket && scoop install hopsule` |
+| **Chocolatey** | Windows | `choco install hopsule` |
+| **Shell script** | macOS / Linux | `curl -fsSL https://raw.githubusercontent.com/Hopsule/cli-tool/main/install.sh \| bash` |
+| **Go install** | All (requires Go) | `go install github.com/Hopsule/cli-tool@latest` |
+
+---
+
+## Detailed Instructions
+
+### npm (All Platforms)
+
+Works on macOS, Linux, and Windows. Requires [Node.js](https://nodejs.org/) 16+.
+
+```bash
+npm install -g hopsule
+```
+
+The npm package automatically downloads the correct Go binary for your platform during installation.
+
+**Update:**
+```bash
+npm update -g hopsule
+```
+
+**Uninstall:**
+```bash
+npm uninstall -g hopsule
+```
+
+---
+
+### Homebrew (macOS / Linux)
 
 ```bash
 brew install hopsule/tap/hopsule
 ```
 
-### Option 2: Manual Installation
-
-#### macOS ARM64 (M1/M2/M3)
+**Update:**
 ```bash
-curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-arm64.tar.gz | tar xz
-mv decision-darwin-arm64 /usr/local/bin/hopsule
-chmod +x /usr/local/bin/hopsule
+brew update && brew upgrade hopsule
 ```
 
-#### macOS Intel (x86_64)
+**Uninstall:**
 ```bash
-curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/decision-darwin-amd64.tar.gz | tar xz
-mv decision-darwin-amd64 /usr/local/bin/hopsule
-chmod +x /usr/local/bin/hopsule
+brew uninstall hopsule
 ```
 
 ---
 
-## 🚀 Quick Start
+### Scoop (Windows)
 
-### 1. Show Dashboard
+```powershell
+scoop bucket add hopsule https://github.com/Hopsule/scoop-bucket
+scoop install hopsule
+```
+
+**Update:**
+```powershell
+scoop update hopsule
+```
+
+**Uninstall:**
+```powershell
+scoop uninstall hopsule
+```
+
+---
+
+### Chocolatey (Windows)
+
+```powershell
+choco install hopsule
+```
+
+**Update:**
+```powershell
+choco upgrade hopsule
+```
+
+**Uninstall:**
+```powershell
+choco uninstall hopsule
+```
+
+---
+
+### Shell Script (macOS / Linux)
+
+One-line install that detects your OS and architecture, downloads the latest release, and installs to `/usr/local/bin`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Hopsule/cli-tool/main/install.sh | bash
+```
+
+This script:
+- Detects OS (macOS / Linux) and architecture (amd64 / arm64)
+- Downloads the latest release from GitHub
+- Verifies SHA256 checksum
+- Installs to `/usr/local/bin` (may request `sudo`)
+
+---
+
+### Manual Download
+
+Download pre-built binaries from [GitHub Releases](https://github.com/Hopsule/cli-tool/releases/latest):
+
+| Platform | Architecture | File |
+|----------|-------------|------|
+| macOS | Apple Silicon (M1/M2/M3/M4) | `hopsule-darwin-arm64.tar.gz` |
+| macOS | Intel | `hopsule-darwin-amd64.tar.gz` |
+| Linux | x86_64 | `hopsule-linux-amd64.tar.gz` |
+| Linux | ARM64 | `hopsule-linux-arm64.tar.gz` |
+| Windows | x86_64 | `hopsule-windows-amd64.zip` |
+| Windows | ARM64 | `hopsule-windows-arm64.zip` |
+
+**macOS / Linux:**
+```bash
+# Example for macOS Apple Silicon
+curl -L https://github.com/Hopsule/cli-tool/releases/latest/download/hopsule-darwin-arm64.tar.gz | tar xz
+sudo mv hopsule /usr/local/bin/
+```
+
+**Windows (PowerShell):**
+```powershell
+Invoke-WebRequest -Uri https://github.com/Hopsule/cli-tool/releases/latest/download/hopsule-windows-amd64.zip -OutFile hopsule.zip
+Expand-Archive hopsule.zip -DestinationPath .
+Move-Item hopsule.exe C:\Windows\System32\  # or add to PATH
+```
+
+---
+
+### Build from Source
+
+Requires [Go 1.24+](https://go.dev/dl/).
+
+```bash
+git clone https://github.com/Hopsule/cli-tool.git
+cd cli-tool
+go build -o hopsule .
+sudo mv hopsule /usr/local/bin/  # or add to PATH
+```
+
+---
+
+## Verify Installation
+
+```bash
+hopsule --version
+# hopsule version 0.9.0 (commit: ..., built: ...)
+```
+
+---
+
+## Getting Started
+
+### 1. Launch the Dashboard
+
 ```bash
 hopsule
 ```
 
-Output:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This opens the interactive TUI with organization and project navigation.
 
-        ████      ████                       Hopsule
-        ████      ████                       
-            ████████                         
-            ████████                         
-        ████          ████                   
-        ████          ████                   
+### 2. Authenticate
 
-        org: hopsule-inc  •  project: app
-        capture: ON  •  sync: ON  •  privacy: redacted
-        last sync: 12s  •  latency: 84ms
-        ─────────────────────────────────────────────────────────────────────────────
-        ✓ Connected
-
-        Get started
-        ❯ hopsule config  (configure cli)
-          hopsule list    (list decisions)
-          hopsule create  (create decision)
-          hopsule status  (health check)
-
-        API: https://api.hopsule.com
-        Token: not set
-
-        Run 'hopsule --help' for more commands
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-### 2. Configure CLI
 ```bash
-hopsule config
+hopsule login
 ```
 
-You'll be prompted for:
-- **API URL**: https://api.hopsule.com (or your decision-api URL)
-- **Project ID**: Your project identifier
-- **Organization**: Your organization name
-- **Auth Token**: Your JWT authentication token
+Opens your browser for device authentication. Once approved, your token is stored locally.
 
-### 3. Use Commands
+### 3. Explore
+
+Use the interactive dashboard to navigate organizations, projects, decisions, memories, and capsules. Or use CLI commands directly:
+
 ```bash
-# List decisions
-hopsule list
-
-# Create decision
-hopsule create
-
-# Get decision details
-hopsule get <id>
-
-# Accept decision
-hopsule accept <id>
-
-# Deprecate decision
-hopsule deprecate <id>
-
-# Show status
-hopsule status
-
-# Get help
-hopsule --help
+hopsule list          # List decisions
+hopsule create        # Create a decision
+hopsule status        # Project status
+hopsule whoami        # Current user
+hopsule --help        # All commands
 ```
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
-### Config File Location
-```
-~/.decision-cli/config.yaml
-```
+Config file: `~/.decision-cli/config.yaml`
 
-### Manual Configuration
 ```yaml
 api_url: https://api.hopsule.com
 project: your-project-id
 organization: your-org-name
-token: your-jwt-token
+token: your-auth-token
 ```
 
-### Environment Variables
+Environment variables (override config file):
+
 ```bash
 export DECISION_API_URL=https://api.hopsule.com
 export DECISION_PROJECT=your-project-id
-export DECISION_TOKEN=your-jwt-token
+export DECISION_TOKEN=your-auth-token
 ```
 
 ---
 
-## 🔄 Updating
+## Troubleshooting
 
-### Homebrew
+### "command not found" after install
+
+**macOS/Linux:** Open a new terminal or run `exec $SHELL` to reload PATH.
+
+**npm:** Ensure npm global bin is in PATH:
 ```bash
-brew update
-brew upgrade hopsule
+npm bin -g
+# Add the output directory to your PATH if needed
 ```
 
-### Manual
-Download the latest release and replace the binary.
-
----
-
-## ✅ Verification
-
+**Homebrew on Apple Silicon:**
 ```bash
-# Check version
-hopsule --version
-
-# Show dashboard
-hopsule
-
-# Test connection
-hopsule status
-```
-
----
-
-## 🆘 Troubleshooting
-
-### Command not found after install
-```bash
-# Open a new terminal window
-# Or reload shell
-exec zsh
-
-# Or use full path
-/opt/homebrew/bin/hopsule
+eval "$(/opt/homebrew/bin/brew shellenv)"
 ```
 
 ### Connection issues
+
 ```bash
-# Check if decision-api is running
+# Check API health
 curl https://api.hopsule.com/health
 
 # Test with explicit flags
-hopsule list --api-url https://api.hopsule.com --project <id> --token <token>
+hopsule list --api-url https://api.hopsule.com --token YOUR_TOKEN
 ```
 
 ### Reset configuration
+
 ```bash
 rm -rf ~/.decision-cli/config.yaml
 hopsule config
@@ -181,16 +250,22 @@ hopsule config
 
 ---
 
-## 📚 Documentation
+## Supported Platforms
 
-- [CLI Tool Repository](https://github.com/Hopsule/cli-tool)
-- [Decision API](https://github.com/Hopsule/api)
-- [Full Documentation](https://github.com/Hopsule/cli-tool#readme)
+| OS | Architecture | Status |
+|----|-------------|--------|
+| macOS 11+ | Apple Silicon (arm64) | Supported |
+| macOS 11+ | Intel (amd64) | Supported |
+| Linux | x86_64 (amd64) | Supported |
+| Linux | ARM64 | Supported |
+| Windows 10+ | x86_64 (amd64) | Supported |
+| Windows 10+ | ARM64 | Supported |
 
 ---
 
-## 🎉 Success!
+## Links
 
-You're ready to use Hopsule CLI for decision-first workflow management!
-
-Run `hopsule` to see your dashboard.
+- [GitHub Repository](https://github.com/Hopsule/cli-tool)
+- [Releases](https://github.com/Hopsule/cli-tool/releases)
+- [Issues](https://github.com/Hopsule/cli-tool/issues)
+- [Website](https://hopsule.com)

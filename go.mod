@@ -1,4 +1,4 @@
-module github.com/Cagangedik/cli-tool
+module github.com/Hopsule/cli-tool
 
 go 1.24.0
 

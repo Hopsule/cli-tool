@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Hopsule CLI - npm wrapper
+# This script launches the Go binary installed by the npm postinstall script.
+
+BASEDIR=$(dirname "$0")
+BINARY="$BASEDIR/hopsule"
+
+# Check for the actual Go binary (not this wrapper)
+if [ -f "${BINARY}" ] && [ ! "${BINARY}" -ef "$0" ]; then
+  exec "${BINARY}" "$@"
+fi
+
+# Fallback: look for hopsule.exe (shouldn't happen on unix but be safe)
+if [ -f "${BASEDIR}/hopsule.exe" ]; then
+  exec "${BASEDIR}/hopsule.exe" "$@"
+fi
+
+echo "Error: hopsule binary not found." >&2
+echo "Try reinstalling: npm install -g hopsule" >&2
+echo "Or install directly: brew install hopsule/tap/hopsule" >&2
+exit 1
