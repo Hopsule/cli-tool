@@ -35,6 +35,18 @@ archives:
         formats:
           - zip
 
+nfpms:
+  - id: hopsule
+    package_name: hopsule
+    vendor: Hopsule
+    homepage: https://hopsule.com
+    maintainer: Hopsule <hello@hopsule.com>
+    description: "Decision-first, context-aware, portable memory system CLI"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+
 checksum:
   name_template: "checksums.txt"
   algorithm: sha256
