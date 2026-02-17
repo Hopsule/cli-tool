@@ -12,7 +12,7 @@ import (
 
 // Version information (set by goreleaser)
 var (
-	version = "0.9.1"
+	version = "0.9.2"
 	commit  = "none"
 	date    = "unknown"
 )
@@ -119,6 +119,11 @@ and team knowledge in a portable, AI-friendly format.`,
 	rootCmd.AddCommand(commands.NewCreateCommand())
 	rootCmd.AddCommand(commands.NewAcceptCommand())
 	rootCmd.AddCommand(commands.NewDeprecateCommand())
+
+	// ========================================================================
+	// MCP COMMANDS
+	// ========================================================================
+	rootCmd.AddCommand(commands.NewMCPCommand())
 
 	// ========================================================================
 	// UTILITY COMMANDS

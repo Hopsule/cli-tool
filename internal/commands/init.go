@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -206,8 +208,25 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
+	// Check if we're in a git repository
+	isGitRepo := isInsideGitRepo(cwd)
+	if !isGitRepo {
+		fmt.Println()
+		fmt.Println("⚠  Not inside a git repository.")
+		fmt.Println("   Hopsule works best within a git-tracked project.")
+		fmt.Println()
+	}
+
 	if err := config.SaveProjectConfig(cwd, projectCfg); err != nil {
 		return fmt.Errorf("failed to save .hopsule file: %w", err)
+	}
+
+	// Add .hopsule to .gitignore if inside a git repo
+	if isGitRepo {
+		gitRoot := findGitRoot(cwd)
+		if gitRoot != "" {
+			addToGitignore(gitRoot)
+		}
 	}
 
 	// Also update global config with this project
@@ -223,13 +242,70 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Project:      %s\n", selectedProject.Name)
 	fmt.Printf("Organization: %s\n", selectedOrg.Name)
 	fmt.Printf("Config file:  .hopsule\n")
+	if isGitRepo {
+		fmt.Printf(".gitignore:   .hopsule added\n")
+	}
 	fmt.Println()
 	fmt.Println("Next steps:")
+	fmt.Println("  • Run 'hopsule mcp install' to configure AI tools")
 	fmt.Println("  • Run 'hopsule list' to see decisions")
 	fmt.Println("  • Run 'hopsule create' to create a new decision")
 	fmt.Println("  • Run 'hopsule status' to see project statistics")
-	fmt.Println()
-	fmt.Println("Tip: Add .hopsule to your .gitignore if you don't want to share project settings.")
 
 	return nil
+}
+
+// isInsideGitRepo checks if the given directory is inside a git repository
+func isInsideGitRepo(dir string) bool {
+	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(output)) == "true"
+}
+
+// findGitRoot returns the root directory of the git repository
+func findGitRoot(dir string) string {
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
+}
+
+// addToGitignore adds .hopsule to .gitignore if not already present
+func addToGitignore(gitRoot string) {
+	gitignorePath := filepath.Join(gitRoot, ".gitignore")
+
+	// Read existing .gitignore
+	content, err := os.ReadFile(gitignorePath)
+	if err == nil {
+		// Check if .hopsule is already in .gitignore
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == ".hopsule" || trimmed == ".hopsule/" {
+				return // Already present
+			}
+		}
+	}
+
+	// Append .hopsule to .gitignore
+	f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "  Warning: could not update .gitignore: %v\n", err)
+		return
+	}
+	defer f.Close()
+
+	// Add newline before if file doesn't end with one
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		f.WriteString("\n")
+	}
+
+	f.WriteString("\n# Hopsule project config (local, not shared)\n.hopsule\n")
 }

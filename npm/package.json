@@ -1,6 +1,6 @@
 {
   "name": "hopsule",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Decision-first, context-aware, portable memory system CLI",
   "keywords": [
     "cli",

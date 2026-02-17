@@ -2,6 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -150,6 +153,13 @@ type model struct {
 	errorMsg string
 
 	executeCmd string
+
+	// Tracks the project ID that is already initialized in the current directory (.hopsule)
+	initializedProjectID string
+
+	// Current working directory info for project matching
+	cwdInGitRepo bool
+	cwdDirName   string
 }
 
 // ============================================================================
@@ -175,6 +185,24 @@ func NewInteractiveModel(cfg *config.Config) model {
 	} else {
 		m.currentView = viewLogin
 	}
+
+	// Detect current directory info
+	if cwd, err := os.Getwd(); err == nil {
+		m.cwdDirName = filepath.Base(cwd)
+
+		// Check if inside a git repo
+		cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+		cmd.Dir = cwd
+		if out, err := cmd.Output(); err == nil && strings.TrimSpace(string(out)) == "true" {
+			m.cwdInGitRepo = true
+		}
+	}
+
+	// Check if there's an initialized project in the current directory
+	if projCfg, _, err := config.LoadProjectConfig(); err == nil && projCfg != nil {
+		m.initializedProjectID = projCfg.Project.ID
+	}
+
 	return m
 }
 

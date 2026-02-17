@@ -198,6 +198,32 @@ func (c *Client) DeprecateDecision(projectID, decisionID string) (*Decision, err
 	return &decision, nil
 }
 
+// ListAcceptedDecisions lists only accepted decisions for a project
+func (c *Client) ListAcceptedDecisions(projectID string) ([]Decision, error) {
+	resp, err := c.doRequest("GET", "/decisions/accepted", nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var result ListDecisionsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result.Decisions, nil
+}
+
+// DoRawRequest exposes doRequest for MCP tools that need low-level access
+func (c *Client) DoRawRequest(method, path string, body interface{}, projectID string) (*http.Response, error) {
+	return c.doRequest(method, path, body, projectID)
+}
+
 // GetProjectStatus retrieves project status
 func (c *Client) GetProjectStatus(projectID string) (*ProjectStatus, error) {
 	resp, err := c.doRequest("GET", fmt.Sprintf("/api/v1/projects/%s/status", projectID), nil, projectID)
@@ -542,6 +568,169 @@ func (c *Client) DeleteMemory(projectID, memoryID string) error {
 	}
 
 	return nil
+}
+
+// GetMemory retrieves a single memory by ID
+func (c *Client) GetMemory(projectID, memoryID string) (*Memory, error) {
+	resp, err := c.doRequest("GET", fmt.Sprintf("/memories/%s", memoryID), nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var memory Memory
+	if err := json.NewDecoder(resp.Body).Decode(&memory); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &memory, nil
+}
+
+// ============================================================================
+// SEARCH TYPES & METHODS
+// ============================================================================
+
+// SearchRequest is the request body for POST /search
+type SearchRequest struct {
+	Query          string   `json:"query"`
+	Mode           string   `json:"mode,omitempty"`
+	EntityTypes    []string `json:"entity_types,omitempty"`
+	Tags           []string `json:"tags,omitempty"`
+	MinSimilarity  float64  `json:"min_similarity,omitempty"`
+	Limit          int      `json:"limit,omitempty"`
+	IncludeContent bool     `json:"include_content,omitempty"`
+	UseReranking   bool     `json:"use_reranking,omitempty"`
+}
+
+// SearchResult represents a single search result
+type SearchResult struct {
+	ID         string  `json:"id"`
+	EntityType string  `json:"entity_type"`
+	Content    string  `json:"content,omitempty"`
+	Statement  string  `json:"statement,omitempty"`
+	Status     string  `json:"status,omitempty"`
+	Score      float64 `json:"score,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+}
+
+// SearchResponse is the response from POST /search
+type SearchResponse struct {
+	Results []SearchResult `json:"results"`
+	Total   int            `json:"total"`
+}
+
+// Search performs a semantic search across entities
+func (c *Client) Search(projectID string, req SearchRequest) (*SearchResponse, error) {
+	resp, err := c.doRequest("POST", "/search", req, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var result SearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// ============================================================================
+// CAPSULE EXTENDED METHODS
+// ============================================================================
+
+// MaterializedCapsule represents a capsule with full decision and memory objects
+type MaterializedCapsule struct {
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	Status      string      `json:"status"`
+	Decisions   []Decision  `json:"decisions,omitempty"`
+	Memories    []*Memory   `json:"memories,omitempty"`
+	CreatedAt   string      `json:"created_at"`
+	UpdatedAt   string      `json:"updated_at"`
+	FrozenAt    *string     `json:"frozen_at,omitempty"`
+	IsActive    bool        `json:"is_active,omitempty"`
+}
+
+// GetCapsuleMaterialized retrieves a capsule with full decisions and memories
+func (c *Client) GetCapsuleMaterialized(projectID, capsuleID string) (*MaterializedCapsule, error) {
+	resp, err := c.doRequest("GET", fmt.Sprintf("/capsules/%s/materialize", capsuleID), nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var result MaterializedCapsule
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// ActiveContextResponse is the response from GET /capsules/active
+type ActiveContextResponse struct {
+	Status string   `json:"status"` // "none", "active", "ambiguous"
+	Pack   *Capsule `json:"pack,omitempty"`
+	Count  *int     `json:"count,omitempty"`
+}
+
+// GetActiveContext retrieves the active context pack for a project
+func (c *Client) GetActiveContext(projectID string) (*ActiveContextResponse, error) {
+	resp, err := c.doRequest("GET", "/capsules/active", nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var result ActiveContextResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetTask retrieves a single task by ID
+func (c *Client) GetTask(projectID, taskID string) (*Task, error) {
+	resp, err := c.doRequest("GET", fmt.Sprintf("/tasks/%s", taskID), nil, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error: %d - %s", resp.StatusCode, string(body))
+	}
+
+	var task Task
+	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &task, nil
 }
 
 // ============================================================================

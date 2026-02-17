@@ -2,6 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Hopsule/cli-tool/internal/api"
@@ -28,6 +32,61 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.organizations = msg.organizations
 			m.projects = msg.projects
+
+			// If in a git repo and no .hopsule yet, try to auto-match by directory name
+			if m.initializedProjectID == "" && m.cwdInGitRepo && m.cwdDirName != "" {
+				dirLower := strings.ToLower(m.cwdDirName)
+				for _, proj := range m.projects {
+					if strings.ToLower(proj.Slug) == dirLower || strings.ToLower(proj.Name) == dirLower {
+						// Found a matching project — auto-init
+						for _, org := range m.organizations {
+							if org.ID == proj.OrganizationID {
+								m.initProjectLocally(proj, org)
+								break
+							}
+						}
+						break
+					}
+				}
+			}
+
+			// Auto-navigate to initialized project if .hopsule exists (or was just created)
+			if m.initializedProjectID != "" {
+				for _, proj := range m.projects {
+					if proj.ID == m.initializedProjectID {
+						for oi, org := range m.organizations {
+							if org.ID == proj.OrganizationID {
+								m.orgSelectedIdx = oi
+								m.currentOrg = org
+								m.currentView = viewProjects
+
+								orgProjects := m.getOrgProjects()
+								for pi, op := range orgProjects {
+									if op.ID == proj.ID {
+										m.projSelectedIdx = pi
+										m.currentProj = op
+										m.menuItems = []menuItem{
+											{"●", "Dashboard", "Project overview & stats", "dashboard"},
+											{"●", "Decisions", "View & manage decisions", "decisions"},
+											{"●", "Memories", "Project memories & context", "memories"},
+											{"●", "Capsules", "Context packs", "capsules"},
+											{"●", "Tasks", "Task management", "tasks"},
+											{"●", "Hopper", "AI Assistant", "hopper"},
+											{"", "", "", ""},
+											{"<", "Back", "Return to projects", "back"},
+										}
+										m.currentView = viewProjectMenu
+										m.selected = 0
+										break
+									}
+								}
+								break
+							}
+						}
+						break
+					}
+				}
+			}
 		}
 		return m, nil
 	case loginCompleteMsg:
@@ -1000,8 +1059,16 @@ func (m model) handleSelect() (tea.Model, tea.Cmd) {
 	case viewProjects:
 		orgProjects := m.getOrgProjects()
 		if m.selected < len(orgProjects) {
+			selectedProj := orgProjects[m.selected]
+
+			// Only allow entering a project if it's initialized in the current directory
+			if selectedProj.ID != m.initializedProjectID {
+				m.errorMsg = "Navigate to this project's directory first: cd <project-dir> && hopsule"
+				return m, nil
+			}
+
 			m.projSelectedIdx = m.selected
-			m.currentProj = orgProjects[m.selected]
+			m.currentProj = selectedProj
 			m.menuItems = []menuItem{
 				{"●", "Dashboard", "Project overview & stats", "dashboard"},
 				{"●", "Decisions", "View & manage decisions", "decisions"},
@@ -1153,4 +1220,92 @@ func (m model) getFilteredCount() int {
 		return len(m.getFilteredTasks())
 	}
 	return 0
+}
+
+// initProjectLocally saves the .hopsule file and updates .gitignore for the selected project.
+func (m *model) initProjectLocally(proj *api.Project, org *api.Organization) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
+	projectCfg := &config.ProjectConfig{
+		Version: config.HopsuleFileVersion,
+		Project: config.ProjectInfo{
+			ID:   proj.ID,
+			Slug: proj.Slug,
+			Name: proj.Name,
+			Organization: config.OrganizationInfo{
+				ID:   org.ID,
+				Slug: org.Slug,
+				Name: org.Name,
+			},
+		},
+	}
+
+	if err := config.SaveProjectConfig(cwd, projectCfg); err != nil {
+		return
+	}
+
+	m.initializedProjectID = proj.ID
+
+	// Add .hopsule to .gitignore if inside a git repo
+	if isGitRepo(cwd) {
+		if gitRoot := gitRootDir(cwd); gitRoot != "" {
+			addHopsuleToGitignore(gitRoot)
+		}
+	}
+
+	// Update global config
+	if m.cfg != nil {
+		m.cfg.Project = proj.ID
+		m.cfg.Organization = org.ID
+		config.SaveConfig(m.cfg)
+	}
+}
+
+func isGitRepo(dir string) bool {
+	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(output)) == "true"
+}
+
+func gitRootDir(dir string) string {
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(output))
+}
+
+func addHopsuleToGitignore(gitRoot string) {
+	gitignorePath := filepath.Join(gitRoot, ".gitignore")
+
+	content, err := os.ReadFile(gitignorePath)
+	if err == nil {
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == ".hopsule" || trimmed == ".hopsule/" {
+				return
+			}
+		}
+	}
+
+	f, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		f.WriteString("\n")
+	}
+	f.WriteString("\n# Hopsule project config (local, not shared)\n.hopsule\n")
 }

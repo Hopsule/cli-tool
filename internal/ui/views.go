@@ -237,6 +237,10 @@ func (m model) renderProjectsContent() string {
 		s.WriteString("  " + dimStyle.Render("Create one at app.hopsule.com") + "\n")
 		return s.String()
 	}
+
+	greenDot := statusOnStyle.Render("●")
+	grayDot := dimStyle.Render("●")
+
 	for i, proj := range projects {
 		desc := proj.Description
 		if desc == "" {
@@ -245,10 +249,23 @@ func (m model) renderProjectsContent() string {
 		if len(desc) > 40 {
 			desc = desc[:37] + "..."
 		}
-		if i == m.selected {
-			s.WriteString("  " + selectedStyle.Render("> "+proj.Name) + "  " + dimStyle.Render(desc) + "\n")
+
+		isInitialized := proj.ID == m.initializedProjectID
+
+		if isInitialized {
+			// Active project — green dot, full brightness
+			if i == m.selected {
+				s.WriteString("  " + selectedStyle.Render("> "+proj.Name) + " " + greenDot + "  " + dimStyle.Render(desc) + "\n")
+			} else {
+				s.WriteString("    " + normalStyle.Render(proj.Name) + " " + greenDot + "  " + dimStyle.Render(desc) + "\n")
+			}
 		} else {
-			s.WriteString("    " + normalStyle.Render(proj.Name) + "  " + dimStyle.Render(desc) + "\n")
+			// Not in this directory — gray dot, dimmed name
+			if i == m.selected {
+				s.WriteString("  " + dimStyle.Render("> "+proj.Name) + " " + grayDot + "  " + dimStyle.Render(desc) + "\n")
+			} else {
+				s.WriteString("    " + dimStyle.Render(proj.Name) + " " + grayDot + "  " + dimStyle.Render(desc) + "\n")
+			}
 		}
 	}
 	return s.String()
@@ -307,7 +324,7 @@ func (m model) renderFooter() string {
 	case viewOrganizations:
 		help = "j/k navigate  •  enter select  •  q quit"
 	case viewProjects:
-		help = "j/k navigate  •  enter select  •  q/esc back"
+		help = "j/k navigate  •  enter select & init  •  " + statusOnStyle.Render("●") + " initialized  •  q/esc back"
 	case viewProjectMenu:
 		help = "j/k navigate  •  enter select  •  q/esc back"
 	case viewDashboard:
