@@ -1469,6 +1469,8 @@ func mcpInstallCursor(hopsuleBin string) error {
 	}
 	configPath := filepath.Join(configDir, "mcp.json")
 
+	cwd, _ := os.Getwd()
+
 	var config map[string]interface{}
 	if data, err := os.ReadFile(configPath); err == nil {
 		json.Unmarshal(data, &config)
@@ -1480,10 +1482,14 @@ func mcpInstallCursor(hopsuleBin string) error {
 	if !ok {
 		servers = make(map[string]interface{})
 	}
-	servers["hopsule"] = map[string]interface{}{
+	serverCfg := map[string]interface{}{
 		"command": hopsuleBin,
 		"args":    []string{"mcp", "serve"},
 	}
+	if cwd != "" {
+		serverCfg["cwd"] = cwd
+	}
+	servers["hopsule"] = serverCfg
 	config["mcpServers"] = servers
 
 	data, err := json.MarshalIndent(config, "", "  ")

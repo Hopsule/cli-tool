@@ -12,7 +12,7 @@ import (
 
 // Version information (set by goreleaser)
 var (
-	version = "0.9.4"
+	version = "0.9.5"
 	commit  = "none"
 	date    = "unknown"
 )

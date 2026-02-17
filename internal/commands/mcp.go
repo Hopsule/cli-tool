@@ -206,10 +206,14 @@ func installForCursor(hopsuleBin string) error {
 		servers = make(map[string]interface{})
 	}
 
-	servers["hopsule"] = map[string]interface{}{
+	serverCfg := map[string]interface{}{
 		"command": hopsuleBin,
 		"args":    []string{"mcp", "serve"},
 	}
+	if cwd, err := os.Getwd(); err == nil && cwd != "" {
+		serverCfg["cwd"] = cwd
+	}
+	servers["hopsule"] = serverCfg
 
 	config["mcpServers"] = servers
 
