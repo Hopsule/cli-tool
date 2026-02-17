@@ -376,11 +376,12 @@ type Organization struct {
 
 // Project represents a project
 type Project struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	Slug           string `json:"slug"`
-	Description    string `json:"description,omitempty"`
-	OrganizationID string `json:"organization_id"`
+	ID                  string `json:"id"`
+	Name                string `json:"name"`
+	Slug                string `json:"slug"`
+	Description         string `json:"description,omitempty"`
+	OrganizationID      string `json:"organization_id"`
+	GitHubRepoFullName  string `json:"github_repo_full_name,omitempty"`
 }
 
 // MeResponse is the response from GET /me

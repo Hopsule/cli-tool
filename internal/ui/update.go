@@ -1,10 +1,12 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -33,19 +35,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.organizations = msg.organizations
 			m.projects = msg.projects
 
-			// If in a git repo and no .hopsule yet, try to auto-match by directory name
-			if m.initializedProjectID == "" && m.cwdInGitRepo && m.cwdDirName != "" {
-				dirLower := strings.ToLower(m.cwdDirName)
-				for _, proj := range m.projects {
-					if strings.ToLower(proj.Slug) == dirLower || strings.ToLower(proj.Name) == dirLower {
-						// Found a matching project — auto-init
-						for _, org := range m.organizations {
-							if org.ID == proj.OrganizationID {
-								m.initProjectLocally(proj, org)
-								break
+			// Auto-match: compare local git remote "owner/repo" with API's github_repo_full_name
+			if m.initializedProjectID == "" && m.cwdInGitRepo {
+				matched := false
+
+				// Priority 1: git remote full name (most reliable)
+				if m.cwdGitRemoteFullName != "" {
+					for _, proj := range m.projects {
+						if proj.GitHubRepoFullName != "" && strings.EqualFold(proj.GitHubRepoFullName, m.cwdGitRemoteFullName) {
+							for _, org := range m.organizations {
+								if org.ID == proj.OrganizationID {
+									m.initProjectLocally(proj, org)
+									matched = true
+									break
+								}
 							}
+							break
 						}
-						break
+					}
+				}
+
+				// Priority 2: fallback to directory name match
+				if !matched && m.cwdDirName != "" {
+					dirLower := strings.ToLower(m.cwdDirName)
+					for _, proj := range m.projects {
+						if strings.ToLower(proj.Slug) == dirLower || strings.ToLower(proj.Name) == dirLower {
+							for _, org := range m.organizations {
+								if org.ID == proj.OrganizationID {
+									m.initProjectLocally(proj, org)
+									break
+								}
+							}
+							break
+						}
 					}
 				}
 			}
@@ -65,16 +87,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 									if op.ID == proj.ID {
 										m.projSelectedIdx = pi
 										m.currentProj = op
-										m.menuItems = []menuItem{
-											{"●", "Dashboard", "Project overview & stats", "dashboard"},
-											{"●", "Decisions", "View & manage decisions", "decisions"},
-											{"●", "Memories", "Project memories & context", "memories"},
-											{"●", "Capsules", "Context packs", "capsules"},
-											{"●", "Tasks", "Task management", "tasks"},
-											{"●", "Hopper", "AI Assistant", "hopper"},
-											{"", "", "", ""},
-											{"<", "Back", "Return to projects", "back"},
-										}
+										m.menuItems = buildProjectMenuItems()
 										m.currentView = viewProjectMenu
 										m.selected = 0
 										break
@@ -312,7 +325,7 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	goBack := func() (tea.Model, tea.Cmd) {
 		switch m.currentView {
-		case viewDashboard, viewDecisions, viewMemories, viewCapsules, viewTasks, viewHopper:
+		case viewDashboard, viewDecisions, viewMemories, viewCapsules, viewTasks, viewHopper, viewMCP:
 			m.currentView = viewProjectMenu
 			m.selected = m.menuSelectedIdx
 			m.searchQuery = ""
@@ -626,6 +639,27 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "enter", " ":
+		if m.currentView == viewMCP {
+			if m.selected < len(m.mcpIDEs) {
+				ide := m.mcpIDEs[m.selected]
+				if !ide.detected {
+					m.errorMsg = ide.name + " not detected on this system"
+					return m, nil
+				}
+				hopsuleBin, err := findHopsuleBinaryPath()
+				if err != nil {
+					m.errorMsg = "Could not find hopsule binary"
+					return m, nil
+				}
+				if err := mcpInstallForIDE(ide.key, hopsuleBin); err != nil {
+					m.errorMsg = "Install failed: " + err.Error()
+					return m, nil
+				}
+				m.mcpIDEs = detectMCPStatus()
+				m.errorMsg = ""
+			}
+			return m, nil
+		}
 		if m.currentView == viewDecisions {
 			d := m.getSelectedDecision()
 			if d != nil {
@@ -1061,24 +1095,20 @@ func (m model) handleSelect() (tea.Model, tea.Cmd) {
 		if m.selected < len(orgProjects) {
 			selectedProj := orgProjects[m.selected]
 
-			// Only allow entering a project if it's initialized in the current directory
-			if selectedProj.ID != m.initializedProjectID {
-				m.errorMsg = "Navigate to this project's directory first: cd <project-dir> && hopsule"
+			if selectedProj.ID == m.initializedProjectID {
+				// Already initialized — proceed
+			} else if m.cwdInGitRepo {
+				// In a git repo — init this project here
+				m.initProjectLocally(selectedProj, m.currentOrg)
+			} else {
+				// Not in a git repo — block
+				m.errorMsg = "Run inside a git repository: cd <project-dir> && hopsule"
 				return m, nil
 			}
 
 			m.projSelectedIdx = m.selected
 			m.currentProj = selectedProj
-			m.menuItems = []menuItem{
-				{"●", "Dashboard", "Project overview & stats", "dashboard"},
-				{"●", "Decisions", "View & manage decisions", "decisions"},
-				{"●", "Memories", "Project memories & context", "memories"},
-				{"●", "Capsules", "Context packs", "capsules"},
-				{"●", "Tasks", "Task management", "tasks"},
-				{"●", "Hopper", "AI Assistant", "hopper"},
-				{"", "", "", ""},
-				{"<", "Back", "Return to projects", "back"},
-			}
+			m.menuItems = buildProjectMenuItems()
 			m.currentView = viewProjectMenu
 			m.selected = 0
 		}
@@ -1141,6 +1171,11 @@ func (m model) handleSelect() (tea.Model, tea.Cmd) {
 					m.loading = true
 					return m, m.loadHopperContext
 				}
+				return m, nil
+			case "mcp":
+				m.currentView = viewMCP
+				m.selected = 0
+				m.mcpIDEs = detectMCPStatus()
 				return m, nil
 			}
 		}
@@ -1308,4 +1343,195 @@ func addHopsuleToGitignore(gitRoot string) {
 		f.WriteString("\n")
 	}
 	f.WriteString("\n# Hopsule project config (local, not shared)\n.hopsule\n")
+}
+
+// ============================================================================
+// PROJECT MENU BUILDER
+// ============================================================================
+
+func buildProjectMenuItems() []menuItem {
+	return []menuItem{
+		{"●", "Dashboard", "Project overview & stats", "dashboard"},
+		{"●", "Decisions", "View & manage decisions", "decisions"},
+		{"●", "Memories", "Project memories & context", "memories"},
+		{"●", "Capsules", "Context packs", "capsules"},
+		{"●", "Tasks", "Task management", "tasks"},
+		{"◆", "MCP", "AI tool connections", "mcp"},
+		{"●", "Hopper", "AI Assistant", "hopper"},
+		{"", "", "", ""},
+		{"<", "Back", "Return to projects", "back"},
+	}
+}
+
+// ============================================================================
+// MCP IDE DETECTION & INSTALL (used by TUI)
+// ============================================================================
+
+func detectMCPStatus() []mcpIDEStatus {
+	ides := []mcpIDEStatus{
+		{name: "Cursor", key: "cursor"},
+		{name: "Claude Desktop", key: "claude-desktop"},
+		{name: "Claude Code", key: "claude-code"},
+	}
+
+	for i := range ides {
+		switch ides[i].key {
+		case "cursor":
+			if _, err := os.Stat(".cursor"); err == nil {
+				ides[i].detected = true
+				ides[i].configured = isCursorMCPConfigured()
+			}
+		case "claude-desktop":
+			configDir := claudeDesktopConfigDir()
+			if configDir != "" {
+				if _, err := os.Stat(configDir); err == nil {
+					ides[i].detected = true
+					ides[i].configured = isClaudeDesktopMCPConfigured(configDir)
+				}
+			}
+		case "claude-code":
+			if _, err := exec.LookPath("claude"); err == nil {
+				ides[i].detected = true
+				ides[i].configured = isClaudeCodeMCPConfigured()
+			}
+		}
+	}
+
+	return ides
+}
+
+func isCursorMCPConfigured() bool {
+	data, err := os.ReadFile(filepath.Join(".cursor", "mcp.json"))
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), "hopsule")
+}
+
+func claudeDesktopConfigDir() string {
+	home, _ := os.UserHomeDir()
+	switch runtime.GOOS {
+	case "darwin":
+		return filepath.Join(home, "Library", "Application Support", "Claude")
+	case "windows":
+		return filepath.Join(os.Getenv("APPDATA"), "Claude")
+	case "linux":
+		return filepath.Join(home, ".config", "Claude")
+	}
+	return ""
+}
+
+func isClaudeDesktopMCPConfigured(configDir string) bool {
+	data, err := os.ReadFile(filepath.Join(configDir, "claude_desktop_config.json"))
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), "hopsule")
+}
+
+func isClaudeCodeMCPConfigured() bool {
+	cmd := exec.Command("claude", "mcp", "list")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(out), "hopsule")
+}
+
+func findHopsuleBinaryPath() (string, error) {
+	execPath, err := os.Executable()
+	if err == nil {
+		return execPath, nil
+	}
+	path, err := exec.LookPath("hopsule")
+	if err == nil {
+		return path, nil
+	}
+	return "", fmt.Errorf("hopsule binary not found")
+}
+
+func mcpInstallForIDE(ide, hopsuleBin string) error {
+	switch ide {
+	case "cursor":
+		return mcpInstallCursor(hopsuleBin)
+	case "claude-desktop":
+		return mcpInstallClaudeDesktop(hopsuleBin)
+	case "claude-code":
+		return mcpInstallClaudeCode(hopsuleBin)
+	}
+	return fmt.Errorf("unsupported IDE: %s", ide)
+}
+
+func mcpInstallCursor(hopsuleBin string) error {
+	configDir := ".cursor"
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return err
+	}
+	configPath := filepath.Join(configDir, "mcp.json")
+
+	var config map[string]interface{}
+	if data, err := os.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, &config)
+	}
+	if config == nil {
+		config = make(map[string]interface{})
+	}
+	servers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		servers = make(map[string]interface{})
+	}
+	servers["hopsule"] = map[string]interface{}{
+		"command": hopsuleBin,
+		"args":    []string{"mcp", "serve"},
+	}
+	config["mcpServers"] = servers
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath, data, 0644)
+}
+
+func mcpInstallClaudeDesktop(hopsuleBin string) error {
+	configDir := claudeDesktopConfigDir()
+	if configDir == "" {
+		return fmt.Errorf("unsupported OS")
+	}
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return err
+	}
+	configPath := filepath.Join(configDir, "claude_desktop_config.json")
+
+	var config map[string]interface{}
+	if data, err := os.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, &config)
+	}
+	if config == nil {
+		config = make(map[string]interface{})
+	}
+	servers, ok := config["mcpServers"].(map[string]interface{})
+	if !ok {
+		servers = make(map[string]interface{})
+	}
+	servers["hopsule"] = map[string]interface{}{
+		"command": hopsuleBin,
+		"args":    []string{"mcp", "serve"},
+	}
+	config["mcpServers"] = servers
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(configPath, data, 0644)
+}
+
+func mcpInstallClaudeCode(hopsuleBin string) error {
+	claudePath, err := exec.LookPath("claude")
+	if err != nil {
+		return fmt.Errorf("'claude' command not found")
+	}
+	cmd := exec.Command(claudePath, "mcp", "add", "hopsule", "--", hopsuleBin, "mcp", "serve")
+	return cmd.Run()
 }

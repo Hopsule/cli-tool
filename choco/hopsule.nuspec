@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>hopsule</id>
-    <version>0.9.3</version>
+    <version>0.9.4</version>
     <title>Hopsule CLI</title>
     <authors>Hopsule</authors>
     <owners>Hopsule</owners>

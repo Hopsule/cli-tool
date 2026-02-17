@@ -120,6 +120,8 @@ func (m model) renderPageView() string {
 			s.WriteString(m.renderTasksContent())
 		case viewHopper:
 			s.WriteString(m.renderHopperContent())
+		case viewMCP:
+			s.WriteString(m.renderMCPContent())
 		}
 	}
 
@@ -177,6 +179,8 @@ func (m model) renderBreadcrumb() string {
 			pageName = "Tasks"
 		case viewHopper:
 			pageName = "Hopper"
+		case viewMCP:
+			pageName = "MCP"
 		}
 		parts = []string{orgName, projName, pageName}
 	}
@@ -291,6 +295,56 @@ func (m model) renderProjectMenuContent() string {
 	return s.String()
 }
 
+func (m model) renderMCPContent() string {
+	var s strings.Builder
+
+	s.WriteString("  " + titleStyle.Render("AI Tool Integrations") + "\n")
+	s.WriteString("  " + dimStyle.Render("Connect Hopsule to your AI coding tools via MCP") + "\n\n")
+
+	greenDot := statusOnStyle.Render("●")
+	grayDot := dimStyle.Render("●")
+	dimDot := dimStyle.Render("○")
+
+	for i, ide := range m.mcpIDEs {
+		name := ide.name
+		for len(name) < 18 {
+			name += " "
+		}
+
+		var dot, status string
+		if !ide.detected {
+			dot = dimDot
+			status = dimStyle.Render("Not detected")
+		} else if ide.configured {
+			dot = greenDot
+			status = statusOnStyle.Render("Configured")
+		} else {
+			dot = grayDot
+			status = dimStyle.Render("Not configured")
+		}
+
+		if i == m.selected {
+			s.WriteString("  " + selectedStyle.Render("> "+name) + " " + dot + "  " + status + "\n")
+		} else {
+			s.WriteString("    " + normalStyle.Render(name) + " " + dot + "  " + status + "\n")
+		}
+	}
+
+	s.WriteString("\n")
+	if m.selected < len(m.mcpIDEs) {
+		ide := m.mcpIDEs[m.selected]
+		if !ide.detected {
+			s.WriteString("  " + dimStyle.Render("Install "+ide.name+" to enable MCP integration") + "\n")
+		} else if ide.configured {
+			s.WriteString("  " + dimStyle.Render("Press Enter to reinstall/update MCP configuration") + "\n")
+		} else {
+			s.WriteString("  " + dimStyle.Render("Press Enter to configure Hopsule MCP for "+ide.name) + "\n")
+		}
+	}
+
+	return s.String()
+}
+
 // ============================================================================
 // FOOTER
 // ============================================================================
@@ -327,6 +381,8 @@ func (m model) renderFooter() string {
 		help = "j/k navigate  •  enter select & init  •  " + statusOnStyle.Render("●") + " initialized  •  q/esc back"
 	case viewProjectMenu:
 		help = "j/k navigate  •  enter select  •  q/esc back"
+	case viewMCP:
+		help = "j/k navigate  •  enter install/update  •  q/esc back"
 	case viewDashboard:
 		help = "q/esc back"
 	case viewDecisions:

@@ -30,6 +30,7 @@ const (
 	viewCapsules
 	viewTasks
 	viewHopper
+	viewMCP
 )
 
 // ============================================================================
@@ -158,8 +159,12 @@ type model struct {
 	initializedProjectID string
 
 	// Current working directory info for project matching
-	cwdInGitRepo bool
-	cwdDirName   string
+	cwdInGitRepo         bool
+	cwdDirName           string
+	cwdGitRemoteFullName string // "owner/repo" parsed from git remote URL
+
+	// MCP view state
+	mcpIDEs []mcpIDEStatus
 }
 
 // ============================================================================
@@ -195,6 +200,13 @@ func NewInteractiveModel(cfg *config.Config) model {
 		cmd.Dir = cwd
 		if out, err := cmd.Output(); err == nil && strings.TrimSpace(string(out)) == "true" {
 			m.cwdInGitRepo = true
+
+			// Parse git remote URL → "owner/repo"
+			remoteCmd := exec.Command("git", "remote", "get-url", "origin")
+			remoteCmd.Dir = cwd
+			if remoteOut, err := remoteCmd.Output(); err == nil {
+				m.cwdGitRemoteFullName = parseGitRemoteFullName(strings.TrimSpace(string(remoteOut)))
+			}
 		}
 	}
 
@@ -521,6 +533,8 @@ func (m model) getMaxSelection() int {
 		return len(m.getFilteredCapsules())
 	case viewDashboard:
 		return 0
+	case viewMCP:
+		return len(m.mcpIDEs)
 	}
 	return 0
 }
@@ -689,4 +703,54 @@ func (m model) getListPageItems(total int) (start, end int) {
 	start = m.listPage * m.listPageSize
 	end = min(start+m.listPageSize, total)
 	return start, end
+}
+
+// ============================================================================
+// GIT REMOTE PARSING
+// ============================================================================
+
+// parseGitRemoteFullName extracts "owner/repo" from a git remote URL.
+// Supports both HTTPS and SSH formats:
+//   - https://github.com/Hopsule/web-app.git → Hopsule/web-app
+//   - git@github.com:Hopsule/web-app.git     → Hopsule/web-app
+func parseGitRemoteFullName(remoteURL string) string {
+	remoteURL = strings.TrimSpace(remoteURL)
+	if remoteURL == "" {
+		return ""
+	}
+
+	// SSH format: git@github.com:owner/repo.git
+	if strings.Contains(remoteURL, ":") && strings.HasPrefix(remoteURL, "git@") {
+		parts := strings.SplitN(remoteURL, ":", 2)
+		if len(parts) == 2 {
+			path := parts[1]
+			path = strings.TrimSuffix(path, ".git")
+			return path
+		}
+	}
+
+	// HTTPS format: https://github.com/owner/repo.git
+	remoteURL = strings.TrimSuffix(remoteURL, ".git")
+	// Remove protocol
+	if idx := strings.Index(remoteURL, "://"); idx != -1 {
+		remoteURL = remoteURL[idx+3:]
+	}
+	// Remove host: github.com/owner/repo → owner/repo
+	parts := strings.SplitN(remoteURL, "/", 2)
+	if len(parts) == 2 {
+		return parts[1]
+	}
+
+	return ""
+}
+
+// ============================================================================
+// MCP IDE STATUS
+// ============================================================================
+
+type mcpIDEStatus struct {
+	name       string // Display name: "Cursor", "Claude Desktop", "Claude Code"
+	key        string // Internal key: "cursor", "claude-desktop", "claude-code"
+	detected   bool   // IDE is installed on the system
+	configured bool   // Hopsule MCP is configured in the IDE
 }
