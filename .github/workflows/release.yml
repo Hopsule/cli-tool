@@ -53,7 +53,13 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN for creating releases in this repo
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          # GH_PAT is a Personal Access Token with repo scope,
+          # needed to push Homebrew formula and Scoop manifest to other repos.
+          # Create at: GitHub Settings > Developer settings > Personal access tokens
+          # Required scopes: repo (full control of private repositories)
+          # Add as secret: cli-tool repo > Settings > Secrets > Actions > GH_PAT
 
   # ──────────────────────────────────────────────────────────────────
   # 3. Publish npm package
