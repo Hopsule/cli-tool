@@ -290,17 +290,6 @@ func (m model) loadCapsules() tea.Msg {
 	return capsulesLoadedMsg{capsules: capsules}
 }
 
-func (m model) loadBrainStats() tea.Msg {
-	if m.client == nil || m.currentProj == nil {
-		return brainStatsLoadedMsg{err: fmt.Errorf("not authenticated or no project selected")}
-	}
-	stats, err := m.client.GetGraphStats(m.currentProj.ID)
-	if err != nil {
-		return brainStatsLoadedMsg{err: err}
-	}
-	return brainStatsLoadedMsg{stats: stats}
-}
-
 func (m model) loadDashboardData() tea.Msg {
 	if m.client == nil || m.currentProj == nil {
 		return dashboardLoadedMsg{err: fmt.Errorf("not authenticated or no project selected")}

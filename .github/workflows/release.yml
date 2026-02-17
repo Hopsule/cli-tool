@@ -10,10 +10,10 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────────────────────────────────
-  # 1. Test before releasing
+  # 1. Lint + Test before releasing
   # ──────────────────────────────────────────────────────────────────
   test:
-    name: Test
+    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,11 +24,13 @@ jobs:
         with:
           go-version: "1.24"
 
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
       - name: Run tests
         run: go test -v -race ./...
-
-      - name: Go vet
-        run: go vet ./...
 
   # ──────────────────────────────────────────────────────────────────
   # 2. GoReleaser: build binaries, create GitHub release, push
@@ -57,7 +59,7 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
 
   # ──────────────────────────────────────────────────────────────────
-  # 3. Publish npm package
+  # 3. Publish npm package (independent of Chocolatey)
   # ──────────────────────────────────────────────────────────────────
   npm-publish:
     name: npm Publish
@@ -87,12 +89,13 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ──────────────────────────────────────────────────────────────────
-  # 4. Push Chocolatey package
+  # 4. Push Chocolatey package (continue-on-error: moderation delays)
   # ──────────────────────────────────────────────────────────────────
   chocolatey:
     name: Chocolatey
     needs: goreleaser
     runs-on: windows-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

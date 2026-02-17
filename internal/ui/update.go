@@ -1204,7 +1204,7 @@ func (m model) initLogin() tea.Msg {
 		return loginInitMsg{err: err}
 	}
 	authURL := fmt.Sprintf("%s/auth/device?code=%s", cfg.WebURL, initResp.Code)
-	openBrowser(authURL)
+	_ = openBrowser(authURL)
 	return loginInitMsg{deviceCode: initResp.Code, authURL: authURL}
 }
 

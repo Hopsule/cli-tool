@@ -96,34 +96,6 @@ func sanitizeMarkdownForTerminal(s string) string {
 	return s
 }
 
-func formatMarkdownForTerminal(s string) string {
-	lines := strings.Split(s, "\n")
-	var result []string
-	for _, line := range lines {
-		if strings.HasPrefix(line, "```") {
-			continue
-		}
-		if strings.HasPrefix(line, "# ") {
-			line = strings.TrimPrefix(line, "# ")
-		} else if strings.HasPrefix(line, "## ") {
-			line = strings.TrimPrefix(line, "## ")
-		} else if strings.HasPrefix(line, "### ") {
-			line = strings.TrimPrefix(line, "### ")
-		}
-		if strings.HasPrefix(line, "- ") {
-			line = "- " + strings.TrimPrefix(line, "- ")
-		}
-		if strings.HasPrefix(line, "* ") {
-			line = "- " + strings.TrimPrefix(line, "* ")
-		}
-		line = strings.ReplaceAll(line, "**", "")
-		line = strings.ReplaceAll(line, "__", "")
-		line = strings.ReplaceAll(line, "`", "")
-		result = append(result, line)
-	}
-	return strings.Join(result, "\n")
-}
-
 // ============================================================================
 // BROWSER HELPERS
 // ============================================================================

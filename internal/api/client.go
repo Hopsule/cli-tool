@@ -1110,10 +1110,6 @@ func findIndex(s, substr string) int {
 }
 
 // Helper function to check if string contains marker
-func containsMarker(s, marker string) bool {
-	return findIndex(s, marker) != -1
-}
-
 // ============================================================================
 // CHAT HISTORY TYPES & METHODS
 // ============================================================================

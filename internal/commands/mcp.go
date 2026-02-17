@@ -68,12 +68,6 @@ Prerequisites:
 // hopsule mcp install
 // ============================================================================
 
-type ideConfig struct {
-	name       string
-	configPath string
-	configKey  string
-}
-
 func newMCPInstallCommand() *cobra.Command {
 	var targetIDE string
 

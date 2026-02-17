@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $packageName = 'hopsule'
-$version = '0.9.5'
+$version = '0.9.6'
 
 # Determine architecture
 $arch = if ([Environment]::Is64BitOperatingSystem) {
