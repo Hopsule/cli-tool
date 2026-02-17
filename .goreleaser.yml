@@ -64,7 +64,7 @@ brews:
   - repository:
       owner: Hopsule
       name: homebrew-tap
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      token: "{{ .Env.GH_PAT }}"
     directory: Formula
     homepage: https://hopsule.com
     description: "Decision-first, context-aware, portable memory system CLI"
@@ -78,7 +78,7 @@ scoops:
   - repository:
       owner: Hopsule
       name: scoop-bucket
-      token: "{{ .Env.GITHUB_TOKEN }}"
+      token: "{{ .Env.GH_PAT }}"
     homepage: https://hopsule.com
     description: "Decision-first, context-aware, portable memory system CLI"
     license: MIT
