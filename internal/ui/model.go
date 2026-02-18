@@ -164,7 +164,8 @@ type model struct {
 	cwdGitRemoteFullName string // "owner/repo" parsed from git remote URL
 
 	// MCP view state
-	mcpIDEs []mcpIDEStatus
+	mcpIDEs          []mcpIDEStatus
+	mcpConfirmManual bool // Waiting for second Enter to confirm manual setup
 }
 
 // ============================================================================

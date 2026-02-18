@@ -55,6 +55,9 @@ var (
 	helpStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.AdaptiveColor{Light: "244", Dark: "244"})
 
+	warningStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "136", Dark: "226"}).
+			Bold(true)
 )
 
 // ============================================================================

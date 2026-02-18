@@ -333,8 +333,10 @@ func (m model) renderMCPContent() string {
 	s.WriteString("\n")
 	if m.selected < len(m.mcpIDEs) {
 		ide := m.mcpIDEs[m.selected]
-		if !ide.detected {
-			s.WriteString("  " + dimStyle.Render("Install "+ide.name+" to enable MCP integration") + "\n")
+		if !ide.detected && m.mcpConfirmManual {
+			s.WriteString("  " + warningStyle.Render(ide.name+" not detected.") + " " + dimStyle.Render("Press Enter again to setup manually") + "\n")
+		} else if !ide.detected {
+			s.WriteString("  " + dimStyle.Render(ide.name+" not detected — press Enter to setup manually") + "\n")
 		} else if ide.configured {
 			s.WriteString("  " + dimStyle.Render("Press Enter to reinstall/update MCP configuration") + "\n")
 		} else {
@@ -382,7 +384,11 @@ func (m model) renderFooter() string {
 	case viewProjectMenu:
 		help = "j/k navigate  •  enter select  •  q/esc back"
 	case viewMCP:
-		help = "j/k navigate  •  enter install/update  •  q/esc back"
+		if m.mcpConfirmManual {
+			help = "enter confirm manual setup  •  j/k cancel  •  q/esc back"
+		} else {
+			help = "j/k navigate  •  enter install/setup  •  q/esc back"
+		}
 	case viewDashboard:
 		help = "q/esc back"
 	case viewDecisions:

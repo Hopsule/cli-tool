@@ -324,6 +324,7 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	goBack := func() (tea.Model, tea.Cmd) {
+		m.mcpConfirmManual = false
 		switch m.currentView {
 		case viewDashboard, viewDecisions, viewMemories, viewCapsules, viewTasks, viewHopper, viewMCP:
 			m.currentView = viewProjectMenu
@@ -374,6 +375,7 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return goBack()
 
 	case "up", "k":
+		m.mcpConfirmManual = false
 		if m.isCardView() && (m.currentView == viewDecisions || m.currentView == viewMemories || m.currentView == viewCapsules) {
 			cols := m.getGridCols()
 			if m.selected >= cols {
@@ -393,6 +395,7 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case "down", "j":
+		m.mcpConfirmManual = false
 		maxSel := m.getMaxSelection() - 1
 		if m.isCardView() && (m.currentView == viewDecisions || m.currentView == viewMemories || m.currentView == viewCapsules) {
 			cols := m.getGridCols()
@@ -642,10 +645,16 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.currentView == viewMCP {
 			if m.selected < len(m.mcpIDEs) {
 				ide := m.mcpIDEs[m.selected]
-				if !ide.detected {
-					m.errorMsg = ide.name + " not detected on this system"
+
+				// Step 1: If IDE not detected and not yet confirmed, ask for manual setup
+				if !ide.detected && !m.mcpConfirmManual {
+					m.mcpConfirmManual = true
+					m.errorMsg = ""
 					return m, nil
 				}
+
+				// Step 2 (or detected IDE): proceed with install
+				m.mcpConfirmManual = false
 				hopsuleBin, err := findHopsuleBinaryPath()
 				if err != nil {
 					m.errorMsg = "Could not find hopsule binary"
