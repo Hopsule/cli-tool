@@ -653,17 +653,12 @@ func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
-				// Step 2 (or detected IDE): proceed with install
-				m.mcpConfirmManual = false
-				hopsuleBin, err := findHopsuleBinaryPath()
-				if err != nil {
-					m.errorMsg = "Could not find hopsule binary"
-					return m, nil
-				}
-				if err := mcpInstallForIDE(ide.key, hopsuleBin, m.currentProj.ID); err != nil {
-					m.errorMsg = "Install failed: " + err.Error()
-					return m, nil
-				}
+			// Step 2 (or detected IDE): proceed with hosted MCP install
+			m.mcpConfirmManual = false
+			if err := mcpInstallHostedForIDE(ide.key); err != nil {
+				m.errorMsg = "Install failed: " + err.Error()
+				return m, nil
+			}
 				m.mcpIDEs = detectMCPStatus()
 				m.errorMsg = ""
 			}
@@ -1447,31 +1442,27 @@ func isClaudeCodeMCPConfigured() bool {
 	return strings.Contains(string(out), "hopsule")
 }
 
-func findHopsuleBinaryPath() (string, error) {
-	execPath, err := os.Executable()
-	if err == nil {
-		return execPath, nil
-	}
-	path, err := exec.LookPath("hopsule")
-	if err == nil {
-		return path, nil
-	}
-	return "", fmt.Errorf("hopsule binary not found")
-}
+const tuiHostedMCPURL = "https://mcp.hopsule.com"
 
-func mcpInstallForIDE(ide, hopsuleBin, projectID string) error {
+func mcpInstallHostedForIDE(ide string) error {
 	switch ide {
 	case "cursor":
-		return mcpInstallCursor(hopsuleBin, projectID)
+		return mcpInstallHostedCursor()
 	case "claude-desktop":
-		return mcpInstallClaudeDesktop(hopsuleBin, projectID)
+		return mcpInstallHostedClaudeDesktop()
 	case "claude-code":
-		return mcpInstallClaudeCode(hopsuleBin, projectID)
+		return mcpInstallHostedClaudeCode()
 	}
 	return fmt.Errorf("unsupported IDE: %s", ide)
 }
 
-func mcpInstallCursor(hopsuleBin, projectID string) error {
+func hostedMCPConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"url": tuiHostedMCPURL + "/mcp",
+	}
+}
+
+func mcpInstallHostedCursor() error {
 	configDir := ".cursor"
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return err
@@ -1489,13 +1480,7 @@ func mcpInstallCursor(hopsuleBin, projectID string) error {
 	if !ok {
 		servers = make(map[string]interface{})
 	}
-	servers["hopsule"] = map[string]interface{}{
-		"command": hopsuleBin,
-		"args":    []string{"mcp", "serve"},
-		"env": map[string]string{
-			"HOPSULE_PROJECT_ID": projectID,
-		},
-	}
+	servers["hopsule"] = hostedMCPConfig()
 	mcpCfg["mcpServers"] = servers
 
 	data, err := json.MarshalIndent(mcpCfg, "", "  ")
@@ -1505,7 +1490,7 @@ func mcpInstallCursor(hopsuleBin, projectID string) error {
 	return os.WriteFile(configPath, data, 0644)
 }
 
-func mcpInstallClaudeDesktop(hopsuleBin, projectID string) error {
+func mcpInstallHostedClaudeDesktop() error {
 	configDir := claudeDesktopConfigDir()
 	if configDir == "" {
 		return fmt.Errorf("unsupported OS")
@@ -1526,13 +1511,7 @@ func mcpInstallClaudeDesktop(hopsuleBin, projectID string) error {
 	if !ok {
 		servers = make(map[string]interface{})
 	}
-	servers["hopsule"] = map[string]interface{}{
-		"command": hopsuleBin,
-		"args":    []string{"mcp", "serve"},
-		"env": map[string]string{
-			"HOPSULE_PROJECT_ID": projectID,
-		},
-	}
+	servers["hopsule"] = hostedMCPConfig()
 	mcpCfg["mcpServers"] = servers
 
 	data, err := json.MarshalIndent(mcpCfg, "", "  ")
@@ -1542,13 +1521,13 @@ func mcpInstallClaudeDesktop(hopsuleBin, projectID string) error {
 	return os.WriteFile(configPath, data, 0644)
 }
 
-func mcpInstallClaudeCode(hopsuleBin, projectID string) error {
+func mcpInstallHostedClaudeCode() error {
 	claudePath, err := exec.LookPath("claude")
 	if err != nil {
 		return fmt.Errorf("'claude' command not found")
 	}
 	cmd := exec.Command(claudePath, "mcp", "add", "hopsule",
-		"-e", fmt.Sprintf("HOPSULE_PROJECT_ID=%s", projectID),
-		"--", hopsuleBin, "mcp", "serve")
+		"--transport", "streamable-http",
+		tuiHostedMCPURL+"/mcp")
 	return cmd.Run()
 }
