@@ -40,3 +40,6 @@ decision
 /hopsule
 hopsule-*
 bottle-build-*/
+
+# Documentation
+*.md
