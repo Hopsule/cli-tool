@@ -38,8 +38,12 @@ func LoadConfig() (*Config, error) {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
+	// Only the per-user config dir: reading ./config.yaml from the working
+	// directory would let any checked-out repo override api_url and receive
+	// the user's token.
 	viper.AddConfigPath(configDir)
-	viper.AddConfigPath(".")
+	// config.yaml holds the API token: never world/group readable.
+	viper.SetConfigPermissions(0o600)
 
 	// Environment variables
 	viper.SetEnvPrefix("DECISION")
@@ -66,8 +70,8 @@ func LoadConfig() (*Config, error) {
 	}
 
 	// Ensure config directory exists for future writes
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
+	if err := ensurePrivateDir(configDir); err != nil {
+		return nil, err
 	}
 
 	return cfg, nil
@@ -106,11 +110,29 @@ func SaveConfig(c *Config) error {
 		viper.Set("user", nil)
 	}
 
-	if err := os.MkdirAll(configDir, 0700); err != nil { // 0700 for security
-		return fmt.Errorf("failed to create config directory: %w", err)
+	if err := ensurePrivateDir(configDir); err != nil {
+		return err
 	}
 
-	return viper.WriteConfigAs(configFile)
+	viper.SetConfigPermissions(0o600)
+	if err := viper.WriteConfigAs(configFile); err != nil {
+		return err
+	}
+	// WriteConfigAs keeps the mode of an existing file (older CLI versions
+	// created it 0644), so tighten it explicitly.
+	return os.Chmod(configFile, 0o600)
+}
+
+// ensurePrivateDir creates dir (0700) and tightens it if it already exists
+// with broader permissions from an older CLI version.
+func ensurePrivateDir(dir string) error {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+	if err := os.Chmod(dir, 0o700); err != nil {
+		return fmt.Errorf("failed to secure config directory: %w", err)
+	}
+	return nil
 }
 
 // ClearAuth clears authentication data from config

@@ -196,7 +196,11 @@ func installHostedForCursor(token string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	return os.WriteFile(configPath, data, 0644)
+	if err := writePrivateFile(configPath, data); err != nil {
+		return err
+	}
+	fmt.Println("Note: .cursor/mcp.json now contains your Hopsule token — do not commit it (add .cursor/mcp.json to .gitignore).")
+	return nil
 }
 
 func getClaudeDesktopConfigDir() string {
@@ -245,7 +249,17 @@ func installHostedForClaudeDesktop(token string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	return os.WriteFile(configPath, data, 0644)
+	return writePrivateFile(configPath, data)
+}
+
+// writePrivateFile writes a file that contains a bearer token with 0600
+// permissions, tightening an existing file's mode as well (os.WriteFile
+// only applies the mode when it creates the file).
+func writePrivateFile(path string, data []byte) error {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o600)
 }
 
 func installHostedForClaudeCode(token string) error {

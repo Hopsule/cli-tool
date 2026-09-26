@@ -360,7 +360,6 @@ func (c *Client) DeviceAuthPoll(code string) (*DeviceAuthPollResponse, error) {
 // User represents the authenticated user
 type User struct {
 	ID        string `json:"id"`
-	ClerkID   string `json:"clerk_id"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	AvatarURL string `json:"avatar_url"`

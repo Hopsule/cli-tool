@@ -37,6 +37,8 @@ config.yaml
 dist/
 /bin/
 decision
+/decision-backup
+/main
 /hopsule
 hopsule-*
 bottle-build-*/
